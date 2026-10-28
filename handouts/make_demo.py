@@ -152,6 +152,10 @@ button, select { font: inherit; font-size: 14px; font-weight: 600; border: 1px s
                  background: var(--paper); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--ink); }
 button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
 button:disabled { opacity: .4; cursor: default; }
+button.icon { display: inline-flex; align-items: center; justify-content: center; padding: 6px 9px; }
+button.icon[hidden] { display: none; }
+#full .leave, .fullscreen #full .enter { display: none; }
+.fullscreen #full .leave { display: inline; }
 .phone-only { display: none; }
 label { font-size: 14px; font-weight: 600; color: var(--muted); display: flex; gap: 8px; align-items: center; }
 .spacer { flex: 1; }
@@ -215,7 +219,9 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
   .show h1 { padding-right: 48px; }
   #tools { left: 10px; right: 10px; bottom: 10px; justify-content: center; }
   #tools .size, #tools .sep { display: none; }
-  #tools button { min-height: 44px; padding: 8px 12px; font-size: 15px; }
+  #tools { gap: 5px; }
+  #tools button { min-height: 44px; padding: 8px 10px; font-size: 15px; }
+  #tools button.icon { min-width: 44px; padding: 0; }
   .del { width: calc(40px * var(--inv)); height: calc(40px * var(--inv)); top: calc(-20px * var(--inv));
          right: calc(-20px * var(--inv)); font-size: calc(22px * var(--inv)); border-width: calc(2px * var(--inv)); }
   .piece.note > .del { right: calc(-46px * var(--inv)); top: calc(-8px * var(--inv)); }
@@ -249,6 +255,12 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
     <button id="addText">Text</button>
     <button id="fit" class="phone-only">Fit</button>
     <button id="reset">Clear</button>
+    <button id="full" class="icon" aria-label="Full screen" title="Full screen" hidden>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="enter" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>
+        <path class="leave" d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/>
+      </svg></button>
   </div>
 </div>
 <dialog id="ask">
@@ -465,8 +477,10 @@ function startResize(e, el, item) {
     pos.k = Math.max(0.3, Math.min(5, startK * (startW + (ev.clientX - x0) / state.zoom) / startW));
     layoutBoard();
   };
+  const end = () => { grip.removeEventListener("pointermove", move); state.cancelDrag = null; };
+  state.cancelDrag = () => { end(); pos.k = startK; layoutBoard(); };   // a second finger: pinch instead
   grip.addEventListener("pointermove", move);
-  grip.addEventListener("pointerup", () => grip.removeEventListener("pointermove", move), { once: true });
+  grip.addEventListener("pointerup", end, { once: true });
 }
 
 function startDrag(e, el, item) {
@@ -482,7 +496,7 @@ function startDrag(e, el, item) {
     board.appendChild(el);
     renderTray();
   }
-  const pos = state.placed.get(item.id);
+  const pos = state.placed.get(item.id), start = { x: pos.x, y: pos.y };
   pos.z = ++state.z;
   select(el);
   el.classList.add("dragging");
@@ -494,13 +508,18 @@ function startDrag(e, el, item) {
     pos.y = Math.min(Math.max(p.y - grab.y * h, -h / 2), board.offsetHeight - h / 2);
     layoutBoard();
   };
-  const up = ev => {
+  const end = () => {
     el.classList.remove("dragging");
     el.removeEventListener("pointermove", move);
     el.removeEventListener("pointerup", up);
+    state.cancelDrag = null;
+  };
+  const up = ev => {
+    end();
     const t = $("#side").getBoundingClientRect();
     if (ev.clientX < t.right && ev.clientX >= t.left) remove(item);   // dropped back on the tray
   };
+  state.cancelDrag = () => { end(); Object.assign(pos, start); layoutBoard(); };   // a second finger: pinch instead
   el.addEventListener("pointermove", move);
   el.addEventListener("pointerup", up);
   move(e);
@@ -550,12 +569,31 @@ $("#addText").onclick = addNote;
 $("#openTray").onclick = openTray;
 $("#closeTray").onclick = closeTray;
 $("#fit").onclick = fit;
+
+// Full screen where the browser allows it for a page (not on iPhone): the button stays hidden otherwise.
+const root = document.documentElement;
+const fullElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+if (root.requestFullscreen || root.webkitRequestFullscreen) $("#full").hidden = false;
+$("#full").onclick = () => {
+  if (fullElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
+};
+const onFull = () => {
+  const on = !!fullElement();
+  document.body.classList.toggle("fullscreen", on);
+  $("#full").title = on ? "Leave full screen" : "Full screen";
+  $("#full").setAttribute("aria-label", $("#full").title);
+};
+document.addEventListener("fullscreenchange", onFull);
+document.addEventListener("webkitfullscreenchange", onFull);
 $("#writeBtn").onclick = () => {
   const el = state.selected, item = el && ITEMS.find(i => i.id === el.dataset.id);
   if (item) item.kind === "note" ? editNote(el) : write(el, item);
 };
 
 // Phones: one finger on the empty sheet pans, two fingers pinch-zoom around the point between them.
+// One finger on a piece drags it; as soon as a second finger touches (anywhere), that drag is undone
+// and both fingers zoom. The listeners run in the capture phase, before the pieces' own.
 const touches = new Map();
 let gesture = null;
 const restartGesture = () => {
@@ -564,15 +602,22 @@ const restartGesture = () => {
 };
 wrap.addEventListener("pointerdown", e => {
   if (!state.phone || e.pointerType !== "touch") return;
-  if (document.body.classList.contains("drawer")) { closeTray(); return; }
-  if (e.target.closest(".piece, #tools")) return;
-  wrap.setPointerCapture(e.pointerId);
+  if (document.body.classList.contains("drawer")) { closeTray(); e.stopPropagation(); return; }
+  if (e.target.closest("#tools")) return;
   touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (touches.size === 1 && e.target.closest(".piece")) { gesture = null; return; }   // the piece's own drag
+  if (touches.size > 1) {
+    if (state.cancelDrag) state.cancelDrag();
+    e.stopPropagation();
+  }
+  wrap.setPointerCapture(e.pointerId);
   restartGesture();
-});
+}, true);
 wrap.addEventListener("pointermove", e => {
   if (!touches.has(e.pointerId)) return;
   touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (!gesture) return;                       // one finger dragging a piece
+  e.stopPropagation();
   const p = [...touches.values()], g = gesture;
   if (p.length === 1) {
     state.pan = { x: g.pan.x + p[0].x - g.pts[0].x, y: g.pan.y + p[0].y - g.pts[0].y };
@@ -586,10 +631,13 @@ wrap.addEventListener("pointermove", e => {
     state.pan = { x: m.x - r.left - sx * z, y: m.y - r.top - sy * z };
   }
   applyView();
-});
-const liftFinger = e => { if (touches.delete(e.pointerId)) restartGesture(); };
-wrap.addEventListener("pointerup", liftFinger);
-wrap.addEventListener("pointercancel", liftFinger);
+}, true);
+const liftFinger = e => {
+  if (!touches.delete(e.pointerId)) return;
+  if (gesture) restartGesture();              // two fingers to one: carry on panning with the other
+};
+wrap.addEventListener("pointerup", liftFinger, true);
+wrap.addEventListener("pointercancel", liftFinger, true);
 document.addEventListener("gesturestart", e => e.preventDefault());   // Safari: no page zoom on top of ours
 board.addEventListener("pointerdown", e => { if (e.target === board) select(null); });
 document.addEventListener("keydown", e => {
