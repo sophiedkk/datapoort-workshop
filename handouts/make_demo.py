@@ -132,10 +132,11 @@ PAGE = """<!doctype html>
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { font-family: Lexend, sans-serif; color: var(--ink); background: var(--bg); display: grid;
-       grid-template-columns: var(--tray) 1fr; grid-template-rows: 100vh; overflow: hidden; }
-#side { display: flex; flex-direction: column; min-height: 0; height: 100vh; border-right: 1px solid var(--line);
+       grid-template-columns: var(--tray) 1fr; grid-template-rows: 100%; height: 100vh; height: 100dvh;
+       overflow: hidden; }
+#side { display: flex; flex-direction: column; min-height: 0; height: 100%; border-right: 1px solid var(--line);
         background: var(--paper); }
-.show { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.show { position: relative; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .show h1 { margin: 2px 0 2px; font-size: 20px; font-weight: 800; line-height: 1.2; }
 .show .sub { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .show label { display: block; margin-bottom: 6px; }
@@ -150,17 +151,19 @@ body { font-family: Lexend, sans-serif; color: var(--ink); background: var(--bg)
 button, select { font: inherit; font-size: 14px; font-weight: 600; border: 1px solid var(--line);
                  background: var(--paper); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--ink); }
 button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+button:disabled { opacity: .4; cursor: default; }
+.phone-only { display: none; }
 label { font-size: 14px; font-weight: 600; color: var(--muted); display: flex; gap: 8px; align-items: center; }
 .spacer { flex: 1; }
 #tray { flex: 1; overflow-y: auto; padding: 4px 16px 40px; }
 #tray h2 { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
            margin: 18px 0 8px; }
-#tray .piece { position: relative; width: 100%; margin-bottom: 10px; }
+#tray .piece { position: relative; width: 100%; margin-bottom: 10px; touch-action: pan-y; }
 #tray .piece.sticker { display: inline-block; width: auto; margin-right: 8px; }
 #tray .empty { color: var(--muted); font-size: 14px; }
-#wrap { overflow: hidden; position: relative; }
-#board { position: relative; margin: 24px; background: var(--paper); border: 1px solid var(--line);
-         box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+#wrap { overflow: hidden; position: relative; touch-action: none; }
+#board { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: var(--paper);
+         border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.06); }
 #board::before { content: "Flipchart sheet: the template"; position: absolute; left: 16px; top: 10px;
                  font-size: 13px; font-weight: 600; color: #b3aea4; }
 .piece { touch-action: none; user-select: none; cursor: grab; }
@@ -200,12 +203,34 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
 #ask input:focus { outline: 2px solid #1d3f8f; outline-offset: 0; border-color: transparent; }
 #ask .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 #ask .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-@media (max-width: 700px) { body { --tray: 200px; } }
+/* phones: the tray is a drawer, the sheet is a fixed-size flipchart you pinch-zoom and pan, and
+   handles keep their on-screen size whatever the zoom (--inv = 1 / zoom, set by applyView) */
+@media (max-width: 700px), (pointer: coarse) and (max-height: 500px) {
+  body { grid-template-columns: 1fr; }
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: min(340px, 86vw); height: auto; z-index: 400000;
+          transform: translateX(-102%); transition: transform .2s ease; box-shadow: 4px 0 24px rgba(0,0,0,.18); }
+  body.drawer #side { transform: none; }
+  .phone-only { display: inline-block; }
+  .show .close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; padding: 0; font-size: 22px; }
+  .show h1 { padding-right: 48px; }
+  #tools { left: 10px; right: 10px; bottom: 10px; justify-content: center; }
+  #tools .size, #tools .sep { display: none; }
+  #tools button { min-height: 44px; padding: 8px 12px; font-size: 15px; }
+  .del { width: calc(40px * var(--inv)); height: calc(40px * var(--inv)); top: calc(-20px * var(--inv));
+         right: calc(-20px * var(--inv)); font-size: calc(22px * var(--inv)); border-width: calc(2px * var(--inv)); }
+  .piece.note > .del { right: calc(-46px * var(--inv)); top: calc(-8px * var(--inv)); }
+  .grip { width: calc(30px * var(--inv)); height: calc(30px * var(--inv)); right: calc(-15px * var(--inv));
+          bottom: calc(-15px * var(--inv)); border-width: calc(2px * var(--inv)); border-radius: calc(6px * var(--inv)); }
+  #board .piece:hover > .del, #board .piece:hover > .grip { display: none; }
+  #board .piece.selected > .del, #board .piece.selected > .grip { display: block; }
+  #board .piece.selected { outline-width: calc(2px * var(--inv)); outline-offset: calc(3px * var(--inv)); }
+}
 </style>
 </head>
 <body>
 <aside id="side">
   <div class="show">
+    <button id="closeTray" class="phone-only close" aria-label="Close">×</button>
     <h1>openEHR building blocks</h1>
     <p class="sub">Datapoort workshop demo</p>
     <label for="view">Show</label>
@@ -216,10 +241,13 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
 <div id="wrap">
   <div id="board"></div>
   <div id="tools" role="toolbar" aria-label="Sheet tools">
+    <button id="openTray" class="phone-only">Pieces</button>
     <div class="size">Size <button id="smaller" aria-label="Smaller pieces">−</button>
       <button id="bigger" aria-label="Bigger pieces">+</button></div>
     <div class="sep"></div>
+    <button id="writeBtn" class="phone-only" disabled>Write</button>
     <button id="addText">Text</button>
+    <button id="fit" class="phone-only">Fit</button>
     <button id="reset">Clear</button>
   </div>
 </div>
@@ -241,7 +269,10 @@ const VIEWS = [                               // the tray's "Show" menu, in work
      .concat([["Stickers", "Template stickers"]])],
   ["Reference", [["Forms", "Paper forms"]]],
 ];
-const state = { view: "Structure", scale: 3.5, placed: new Map(), z: 1, selected: null, notes: 0 };
+const state = { view: "Structure", scale: 3.5, placed: new Map(), z: 1, selected: null, notes: 0,
+                zoom: 1, pan: { x: 24, y: 24 }, phone: false };
+const PHONE = "(max-width: 700px), (pointer: coarse) and (max-height: 500px)";   // same as the CSS
+const SHEET = { w: 1000, h: 1400 };           // the flipchart on a phone, in px before zooming
 const NOTE_MM = 7;                            // text note font size, mm on the sheet
 const $ = s => document.querySelector(s);
 const tray = $("#tray"), board = $("#board"), wrap = $("#wrap");
@@ -275,6 +306,7 @@ function piece(item) {
   grip.addEventListener("pointerdown", e => startResize(e, el, item));
   el.appendChild(grip);
   el.addEventListener("pointerdown", e => startDrag(e, el, item));
+  el.addEventListener("click", () => { if (!state.placed.has(item.id)) placeInView(item); });   // a tap in the tray
   el.addEventListener("dblclick", () => item.kind === "note" ? editNote(el) : write(el, item));
   return el;
 }
@@ -316,10 +348,30 @@ function renderTray() {
   if (!list.length) tray.insertAdjacentHTML("beforeend", '<p class="empty">All of these are on the sheet.</p>');
 }
 
+function applyView() {
+  board.style.transform = `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`;
+  board.style.setProperty("--inv", 1 / state.zoom);
+}
+
+function fit() {                              // the whole sheet in view, above the toolbar
+  const w = wrap.clientWidth, h = wrap.clientHeight - $("#tools").offsetHeight - 20;
+  state.zoom = Math.min((w - 20) / SHEET.w, (h - 20) / SHEET.h);
+  state.pan = { x: (w - SHEET.w * state.zoom) / 2, y: 10 };
+  applyView();
+}
+
 function layoutBoard() {
-  const s = state.scale;                      // px per mm of the printed pieces; the sheet fills the window
-  board.style.width = wrap.clientWidth - 48 + "px";
-  board.style.height = wrap.clientHeight - 48 + "px";
+  const s = state.scale;                      // px per mm of the printed pieces
+  if (state.phone) {
+    board.style.width = SHEET.w + "px";
+    board.style.height = SHEET.h + "px";
+  } else {                                    // the sheet fills the window
+    board.style.width = wrap.clientWidth - 48 + "px";
+    board.style.height = wrap.clientHeight - 48 + "px";
+    state.zoom = 1;
+    state.pan = { x: 24, y: 24 };
+  }
+  applyView();
   state.placed.forEach((pos, id) => {         // positions in px on the sheet
     const el = pieces.get(id), item = ITEMS.find(i => i.id === id);
     el.style.left = pos.x + "px";
@@ -335,7 +387,34 @@ function select(el) {
   if (state.selected) state.selected.classList.remove("selected");
   state.selected = el;
   if (el) el.classList.add("selected");
+  const item = el && ITEMS.find(i => i.id === el.dataset.id);
+  $("#writeBtn").disabled = !(item && (item.kind === "note" || (item.write || []).length));
 }
+
+// Sheet position (unzoomed px) of a point on the screen.
+function toSheet(clientX, clientY) {
+  const b = board.getBoundingClientRect();
+  return { x: (clientX - b.left) / state.zoom, y: (clientY - b.top) / state.zoom };
+}
+
+function placeInView(item) {                  // tap in the tray: put the piece in the middle of the view
+  const el = pieces.get(item.id);
+  const pos = { x: 0, y: 0, z: ++state.z };
+  state.placed.set(item.id, pos);
+  board.appendChild(el);
+  layoutBoard();
+  const r = wrap.getBoundingClientRect(), c = toSheet(r.left + r.width / 2, r.top + r.height * 0.4);
+  const n = state.placed.size % 5;           // a small step, so pieces don't land exactly on top of each other
+  pos.x = c.x - el.offsetWidth / 2 + n * 14;
+  pos.y = c.y - el.offsetHeight / 2 + n * 14;
+  layoutBoard();
+  select(el);
+  renderTray();
+  closeTray();
+}
+
+const openTray = () => { document.body.classList.add("drawer"); renderTray(); };
+const closeTray = () => document.body.classList.remove("drawer");
 
 function remove(item) {
   const el = pieces.get(item.id);
@@ -367,9 +446,8 @@ function addNote() {
   el.prepend(text);
   el.addEventListener("blur", () => { el.contentEditable = "false"; if (!text.textContent.trim()) remove(item); }, true);
   pieces.set(item.id, el);
-  const w = wrap.getBoundingClientRect(), b = board.getBoundingClientRect();
-  state.placed.set(item.id, { x: w.left + w.width / 2 - b.left - 60, y: w.top + w.height / 2 - b.top,
-                              z: ++state.z });
+  const w = wrap.getBoundingClientRect(), c = toSheet(w.left + w.width / 2, w.top + w.height * 0.4);
+  state.placed.set(item.id, { x: c.x - 60, y: c.y, z: ++state.z });
   board.appendChild(el);
   layoutBoard();
   select(el);
@@ -383,13 +461,17 @@ function startResize(e, el, item) {
   const pos = state.placed.get(item.id), grip = e.currentTarget;
   const startK = pos.k || 1, startW = el.offsetWidth, x0 = e.clientX;
   grip.setPointerCapture(e.pointerId);
-  const move = ev => { pos.k = Math.max(0.3, Math.min(5, startK * (startW + ev.clientX - x0) / startW)); layoutBoard(); };
+  const move = ev => {
+    pos.k = Math.max(0.3, Math.min(5, startK * (startW + (ev.clientX - x0) / state.zoom) / startW));
+    layoutBoard();
+  };
   grip.addEventListener("pointermove", move);
   grip.addEventListener("pointerup", () => grip.removeEventListener("pointermove", move), { once: true });
 }
 
 function startDrag(e, el, item) {
   if (e.button !== 0 || el.isContentEditable) return;
+  if (e.pointerType === "touch" && !state.placed.has(item.id)) return;   // in the tray a finger scrolls; a tap places
   e.preventDefault();
   if (document.activeElement && document.activeElement.isContentEditable) document.activeElement.blur();
   const s = state.scale;
@@ -406,10 +488,10 @@ function startDrag(e, el, item) {
   el.classList.add("dragging");
   el.setPointerCapture(e.pointerId);
   const move = ev => {
-    const b = board.getBoundingClientRect();
+    const p = toSheet(ev.clientX, ev.clientY);
     const w = el.offsetWidth || item.w * s, h = el.offsetHeight || w * 0.6;
-    pos.x = Math.min(Math.max(ev.clientX - b.left - grab.x * w, -w / 2), b.width - w / 2);
-    pos.y = Math.min(Math.max(ev.clientY - b.top - grab.y * h, -h / 2), b.height - h / 2);
+    pos.x = Math.min(Math.max(p.x - grab.x * w, -w / 2), board.offsetWidth - w / 2);
+    pos.y = Math.min(Math.max(p.y - grab.y * h, -h / 2), board.offsetHeight - h / 2);
     layoutBoard();
   };
   const up = ev => {
@@ -465,6 +547,50 @@ $("#reset").onclick = async () => {
   renderTray(); layoutBoard();
 };
 $("#addText").onclick = addNote;
+$("#openTray").onclick = openTray;
+$("#closeTray").onclick = closeTray;
+$("#fit").onclick = fit;
+$("#writeBtn").onclick = () => {
+  const el = state.selected, item = el && ITEMS.find(i => i.id === el.dataset.id);
+  if (item) item.kind === "note" ? editNote(el) : write(el, item);
+};
+
+// Phones: one finger on the empty sheet pans, two fingers pinch-zoom around the point between them.
+const touches = new Map();
+let gesture = null;
+const restartGesture = () => {
+  gesture = touches.size ? { pts: [...touches.values()].map(p => ({ ...p })), zoom: state.zoom,
+                             pan: { ...state.pan } } : null;
+};
+wrap.addEventListener("pointerdown", e => {
+  if (!state.phone || e.pointerType !== "touch") return;
+  if (document.body.classList.contains("drawer")) { closeTray(); return; }
+  if (e.target.closest(".piece, #tools")) return;
+  wrap.setPointerCapture(e.pointerId);
+  touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  restartGesture();
+});
+wrap.addEventListener("pointermove", e => {
+  if (!touches.has(e.pointerId)) return;
+  touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const p = [...touches.values()], g = gesture;
+  if (p.length === 1) {
+    state.pan = { x: g.pan.x + p[0].x - g.pts[0].x, y: g.pan.y + p[0].y - g.pts[0].y };
+  } else {
+    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    const r = wrap.getBoundingClientRect(), m0 = mid(g.pts[0], g.pts[1]), m = mid(p[0], p[1]);
+    const z = Math.min(3, Math.max(0.15, g.zoom * dist(p[0], p[1]) / dist(g.pts[0], g.pts[1])));
+    const sx = (m0.x - r.left - g.pan.x) / g.zoom, sy = (m0.y - r.top - g.pan.y) / g.zoom;   // sheet point under the fingers
+    state.zoom = z;
+    state.pan = { x: m.x - r.left - sx * z, y: m.y - r.top - sy * z };
+  }
+  applyView();
+});
+const liftFinger = e => { if (touches.delete(e.pointerId)) restartGesture(); };
+wrap.addEventListener("pointerup", liftFinger);
+wrap.addEventListener("pointercancel", liftFinger);
+document.addEventListener("gesturestart", e => e.preventDefault());   // Safari: no page zoom on top of ours
 board.addEventListener("pointerdown", e => { if (e.target === board) select(null); });
 document.addEventListener("keydown", e => {
   const el = state.selected;
@@ -473,8 +599,16 @@ document.addEventListener("keydown", e => {
   remove(ITEMS.find(i => i.id === el.dataset.id));
 });
 
-window.addEventListener("resize", () => { renderTray(); layoutBoard(); });
+window.addEventListener("resize", () => {
+  const was = state.phone;
+  state.phone = matchMedia(PHONE).matches;
+  if (!state.phone) closeTray();
+  renderTray(); layoutBoard();
+  if (state.phone && !was) fit();
+});
+state.phone = matchMedia(PHONE).matches;
 renderViews(); renderTray(); layoutBoard();
+if (state.phone) fit();
 </script>
 </body>
 </html>

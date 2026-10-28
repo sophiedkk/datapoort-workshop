@@ -5,6 +5,8 @@ Admission Assessment* template from printed archetype plates and building blocks
 a new archetype (*Inpatient admission details*) with write-on blocks. Adapted from the
 EHRCON26 freshEHR/Hanze practical. No computers or internet needed on the day.
 
+Try the online demo: <https://sophiedkk.github.io/datapoort-workshop/> (works on a laptop or a phone).
+
 | Folder | What's in it |
 |---|---|
 | `forms/` | Word sources of the two paper forms |
@@ -54,11 +56,18 @@ The build also writes `handouts/out/demo.html`: a self-contained page (works off
 showing the idea of the workshop. Drag the strips, plates, building blocks, stickers and paper
 forms from the tray onto the flipchart sheet (forms stay underneath, so blocks can go on top).
 Pick what the tray shows with the *Show* menu (grouped by exercise). Double-click a plate, strip
-or blank sticker to write on it, add notes with *Text*, resize a piece with its corner handle, and take it off the sheet with its x button or the Delete key. Single scripts run the same
-way from `handouts/`, e.g. `uv run make_bricks.py --all --dry-run`.
+or blank sticker to write on it, add notes with *Text*, resize a piece with its corner handle,
+and take it off the sheet with its x button or the Delete key.
+
+On a phone the tray opens with *Pieces* (tap a piece to put it on the sheet), pinch to zoom,
+drag the empty sheet to move around, *Fit* shows the whole sheet, and *Write* writes on the
+selected plate, strip or sticker.
+
+Single scripts run the same way from `handouts/`, e.g. `uv run make_bricks.py --all --dry-run`.
 
 ### Online version (GitHub Pages)
 
+The demo is online at <https://sophiedkk.github.io/datapoort-workshop/>.
 `.github/workflows/pages.yml` publishes the committed `handouts/out/demo.html` as the start page
 of the repository's GitHub Pages site, on every push to `main` that changes it (or by hand from
 the Actions tab). To update the site: rebuild, commit `demo.html` and push.
