@@ -1,0 +1,189 @@
+archetype (adl_version=1.4; uid=195f2c33-fcb8-4475-9fc5-a4c58ade156f)
+	openEHR-EHR-ADMIN_ENTRY.inpatient_admission_details.v0
+
+concept
+	[at0000]
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["date"] = <"2026-09-07">
+	>
+	lifecycle_state = <"unmanaged">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+		>
+	>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"e83381682daebd38c29b75c1dfa342fe">
+		["build_uid"] = <"261513ea-8b57-349f-8bf9-72c5cb3165ea">
+	>
+
+definition
+	ADMIN_ENTRY[at0000] matches {    -- Inpatient admission details
+		data matches {
+			ITEM_TREE[at0001] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0003] occurrences matches {0..1} matches {    -- Mode of access
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0007,    -- Ambulatory
+									at0008,    -- Wheelchair
+									at0009]    -- Stretcher
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..*} matches {    -- Transported with
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0011,    -- Oxygen
+									at0012,    -- Monitor
+									at0013]    -- IV
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0015] occurrences matches {0..1} matches {    -- Admission method
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0016,    -- Waiting list
+									at0017,    -- Booked
+									at0018,    -- Planned
+									at0019,    -- A&E department
+									at0020,    -- General Practitioner
+									at0021,    -- Bed Bureau
+									at0022,    -- Consultant Clinic
+									at0026]    -- Other
+								}
+							}
+						}
+					}
+					ELEMENT[at0023] occurrences matches {0..1} matches {    -- Additional Help needed
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0024,    -- Yes
+									at0025]    -- No
+								}
+							}
+							DV_BOOLEAN matches {*}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Inpatient admission details">
+					description = <"Inpatient admission details">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0003"] = <
+					text = <"Mode of access">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Ambulatory">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Wheelchair">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Stretcher">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Transported with">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"Oxygen">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Monitor">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"IV">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Admission method">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Waiting list">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Booked">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"Planned">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"A&E department">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"General Practitioner">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Bed Bureau">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Consultant Clinic">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"Additional Help needed">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"Yes">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"No">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"Other">
+					description = <"">
+				>
+			>
+		>
+	>

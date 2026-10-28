@@ -1,0 +1,130 @@
+{
+  "modelVersion" : 1,
+  "sources" : [ {
+    "sourceType" : "repository",
+    "id" : "practica-596",
+    "user" : "freshehr_training",
+    "repositoryId" : "practica-596"
+  } ],
+  "entries" : [ {
+    "path" : "Nursing Admission Assessment COMPLETE.v0.t.json",
+    "type" : "template",
+    "id" : "Nursing Admission Assessment COMPLETE.v0",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-15T09:12:51.549Z"
+  }, {
+    "path" : "openEHR-EHR-ADMIN_ENTRY.inpatient_admission_details.v0.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-ADMIN_ENTRY.inpatient_admission_details.v0",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-15T09:12:25.860Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.blood_pressure.v2.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.blood_pressure.v2",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T14:13:16.516Z"
+  }, {
+    "path" : "local/openEHR-EHR-COMPOSITION.encounter.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-COMPOSITION.encounter.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-08-13T13:59:54.612Z"
+  }, {
+    "path" : "local/openEHR-EHR-EVALUATION.problem_diagnosis.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-EVALUATION.problem_diagnosis.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-08-13T14:01:40.513Z"
+  }, {
+    "path" : "local/openEHR-EHR-SECTION.adhoc.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-SECTION.adhoc.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-08-13T14:01:40.511Z"
+  }, {
+    "path" : "local/Nursing Admission Assessment STARTER.v0.t.json",
+    "type" : "template",
+    "id" : "Nursing Admission Assessment STARTER.v0",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-14T17:08:08.341Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.body_temperature.v2.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.body_temperature.v2",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T14:12:17.995Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.height.v2.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.height.v2",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-14T15:29:03.053Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.pulse_oximetry.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.pulse_oximetry.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T14:42:42.835Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.pulse.v2.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.pulse.v2",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T14:12:50.909Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.story.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.story.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T14:12:24.726Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.body_weight.v2.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.body_weight.v2",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-14T15:29:19.713Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.falls_risk_assessment.v0.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.falls_risk_assessment.v0",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-08-13T13:59:54.615Z"
+  }, {
+    "path" : "local/openEHR-EHR-EVALUATION.adverse_reaction_risk.v2.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-EVALUATION.adverse_reaction_risk.v2",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T14:12:05.330Z"
+  }, {
+    "path" : "local/openEHR-EHR-INSTRUCTION.medication_order.v3.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-INSTRUCTION.medication_order.v3",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T14:13:01.761Z"
+  }, {
+    "path" : "local/openEHR-EHR-CLUSTER.adverse_reaction_event.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-CLUSTER.adverse_reaction_event.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-08-13T13:59:54.612Z"
+  }, {
+    "path" : "local/openEHR-EHR-OBSERVATION.clinical_frailty_scale.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-OBSERVATION.clinical_frailty_scale.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-09-07T15:03:38.585Z"
+  }, {
+    "path" : "local/openEHR-EHR-CLUSTER.falls_risk_assessment_extension.v0.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-CLUSTER.falls_risk_assessment_extension.v0",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-08-13T13:59:54.612Z"
+  }, {
+    "path" : "local/openEHR-EHR-CLUSTER.therapeutic_direction.v1.adl",
+    "type" : "archetype",
+    "id" : "openEHR-EHR-CLUSTER.therapeutic_direction.v1",
+    "sourceId" : "practica-596",
+    "lastModified" : "2026-08-13T14:01:40.513Z"
+  } ]
+}

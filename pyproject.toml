@@ -1,0 +1,12 @@
+[project]
+name = "datapoort-workshop"
+version = "0.1.0"
+description = "Print pack generator for the Datapoort openEHR building blocks workshop"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pillow>=10",
+]
+
+[tool.uv]
+package = false
