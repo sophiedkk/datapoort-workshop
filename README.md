@@ -57,6 +57,16 @@ Pick what the tray shows with the *Show* menu (grouped by exercise). Double-clic
 or blank sticker to write on it, add notes with *Text*, resize a piece with its corner handle, and take it off the sheet with its x button or the Delete key. Single scripts run the same
 way from `handouts/`, e.g. `uv run make_bricks.py --all --dry-run`.
 
+### Online version (GitHub Pages)
+
+`.github/workflows/pages.yml` publishes the committed `handouts/out/demo.html` as the start page
+of the repository's GitHub Pages site, on every push to `main` that changes it (or by hand from
+the Actions tab). To update the site: rebuild, commit `demo.html` and push.
+
+One-time setup on GitHub: in the repository's *Settings*, open *Pages* and under *Build and
+deployment* set *Source* to *GitHub Actions*.
+On a free account the repository has to be public for Pages.
+
 ## Changing a paper form
 
 Edit the docx in `forms/`, then render it to the image the assignment uses:
