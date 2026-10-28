@@ -125,7 +125,7 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Building blocks demo</title>
+<title>openEHR building blocks</title>
 <style>
 @font-face { font-family: Lexend; src: url("/*FONT*/") format("truetype"); font-weight: 100 900; }
 :root { --tray: 340px; --ink: #1B1B1B; --muted: #6b6b6b; --line: #d9d6cf; --bg: #f3f1ec; --paper: #fff; }
@@ -136,6 +136,8 @@ body { font-family: Lexend, sans-serif; color: var(--ink); background: var(--bg)
 #side { display: flex; flex-direction: column; min-height: 0; height: 100vh; border-right: 1px solid var(--line);
         background: var(--paper); }
 .show { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.show h1 { margin: 2px 0 2px; font-size: 20px; font-weight: 800; line-height: 1.2; }
+.show .sub { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .show label { display: block; margin-bottom: 6px; }
 .show select { width: 100%; font-size: 15px; padding: 8px 10px; }
 #tools { position: absolute; bottom: 36px; right: 40px; z-index: 300000; display: flex; gap: 6px; align-items: center;
@@ -185,12 +187,27 @@ label { font-size: 14px; font-weight: 600; color: var(--muted); display: flex; g
         background: #fff; border: 2px solid var(--ink); cursor: nwse-resize; z-index: 2; }
 #board .piece:hover > .grip, #board .piece.selected > .grip { display: block; }
 #board .piece.selected { outline: 2px dashed #1d3f8f; outline-offset: 3px; }
+button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline-offset: 2px; }
+/* our own dialog instead of the browser's prompt() and confirm() boxes */
+#ask { border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px 18px; width: min(420px, 90vw);
+       background: var(--paper); color: var(--ink); box-shadow: 0 12px 40px rgba(0,0,0,.18); }
+#ask::backdrop { background: rgba(40, 36, 28, .25); }
+#ask p { margin: 0 0 14px; font-size: 16px; font-weight: 600; line-height: 1.4; }
+#ask label { display: block; margin: 0 0 14px; color: var(--muted); }
+#ask input { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 9px 11px;
+             font: inherit; font-size: 17px; font-weight: 600; color: #1d3f8f; border: 1px solid var(--line);
+             border-radius: 8px; background: #fff; }
+#ask input:focus { outline: 2px solid #1d3f8f; outline-offset: 0; border-color: transparent; }
+#ask .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+#ask .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
 @media (max-width: 700px) { body { --tray: 200px; } }
 </style>
 </head>
 <body>
 <aside id="side">
   <div class="show">
+    <h1>openEHR building blocks</h1>
+    <p class="sub">Datapoort workshop demo</p>
     <label for="view">Show</label>
     <select id="view"></select>
   </div>
@@ -206,6 +223,13 @@ label { font-size: 14px; font-weight: 600; color: var(--muted); display: flex; g
     <button id="reset">Clear</button>
   </div>
 </div>
+<dialog id="ask">
+  <form method="dialog">
+    <div class="fields"></div>
+    <div class="buttons"><button value="cancel" formnovalidate>Cancel</button>
+      <button value="ok" class="primary">OK</button></div>
+  </form>
+</dialog>
 <script>
 const ITEMS = /*ITEMS*/;
 const viewOf = i => i.tab === "Blocks" ? "Blocks|" + i.group : i.tab;
@@ -217,7 +241,7 @@ const VIEWS = [                               // the tray's "Show" menu, in work
      .concat([["Stickers", "Template stickers"]])],
   ["Reference", [["Forms", "Paper forms"]]],
 ];
-const state = { view: "Structure", scale: 4, placed: new Map(), z: 1, selected: null, notes: 0 };
+const state = { view: "Structure", scale: 3.5, placed: new Map(), z: 1, selected: null, notes: 0 };
 const NOTE_MM = 7;                            // text note font size, mm on the sheet
 const $ = s => document.querySelector(s);
 const tray = $("#tray"), board = $("#board"), wrap = $("#wrap");
@@ -400,19 +424,40 @@ function startDrag(e, el, item) {
   move(e);
 }
 
-function write(el, item) {
-  (item.write || []).forEach(w => {
-    const t = el.querySelector(`.ink[data-key="${w.key}"]`);
-    const v = prompt(w.prompt, t.textContent);
-    if (v !== null) t.textContent = v;
+// Shows #ask with a message or text fields; resolves to the field values (OK) or null (Cancel, Esc).
+function ask({ message = "", fields = [], ok = "OK" }) {
+  const dlg = $("#ask"), box = dlg.querySelector(".fields");
+  box.textContent = "";
+  if (message) box.appendChild(Object.assign(document.createElement("p"), { textContent: message }));
+  const inputs = fields.map(f => {
+    const label = Object.assign(document.createElement("label"), { textContent: f.label });
+    const input = Object.assign(document.createElement("input"), { type: "text", value: f.value, autocomplete: "off" });
+    label.appendChild(input);
+    box.appendChild(label);
+    return input;
   });
+  dlg.querySelector(".primary").textContent = ok;
+  dlg.returnValue = "";
+  dlg.showModal();
+  if (inputs.length) inputs[0].select();
+  else dlg.querySelector(".primary").focus();
+  return new Promise(done => dlg.addEventListener("close",
+    () => done(dlg.returnValue === "ok" ? inputs.map(i => i.value) : null), { once: true }));
+}
+
+async function write(el, item) {
+  const ws = item.write || [];
+  if (!ws.length) return;
+  const inks = ws.map(w => el.querySelector(`.ink[data-key="${w.key}"]`));
+  const values = await ask({ fields: ws.map((w, i) => ({ label: w.prompt, value: inks[i].textContent })) });
+  if (values) values.forEach((v, i) => inks[i].textContent = v);
 }
 
 const resize = d => { state.scale = Math.min(6, Math.max(1.5, state.scale + d)); layoutBoard(); };
 $("#smaller").onclick = () => resize(-0.5);
 $("#bigger").onclick = () => resize(0.5);
-$("#reset").onclick = () => {
-  if (!confirm("Put every piece back on the tray and delete the text notes?")) return;
+$("#reset").onclick = async () => {
+  if (!await ask({ message: "Put every piece back on the tray and delete the text notes?", ok: "Clear sheet" })) return;
   ITEMS.filter(i => i.kind === "note").forEach(remove);
   state.placed.clear();
   select(null);
@@ -423,7 +468,7 @@ $("#addText").onclick = addNote;
 board.addEventListener("pointerdown", e => { if (e.target === board) select(null); });
 document.addEventListener("keydown", e => {
   const el = state.selected;
-  if (!el || el.isContentEditable || !["Delete", "Backspace"].includes(e.key)) return;
+  if (!el || el.isContentEditable || $("#ask").open || !["Delete", "Backspace"].includes(e.key)) return;
   e.preventDefault();
   remove(ITEMS.find(i => i.id === el.dataset.id));
 });
