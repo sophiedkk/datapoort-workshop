@@ -53,13 +53,17 @@ CONTENT = [
         "**Grey text** under the name: what the element is for, taken from the archetype.",
         "**Code at the bottom:** a SNOMED CT or LOINC code from the archetype, if it has one.",
     ]),
-    ("h4", "Plates and headings"),
+    ("h4", "The baseplate, headings and plates"),
     ("bullets", [
-        "**Flipchart sheet with the green Encounter strip = the template** (COMPOSITION). Stick the strip at "
-        "the top of the sheet; everything else goes below it.",
-        "**Grey strips = Ad hoc heading** (SECTION): a generic heading; write its name on the strip.",
-        "**Coloured plates = archetypes.** One per archetype, in its own colour; its building blocks go on top. "
-        "Write the name and the cardinality the archetype gets in your template on the plate.",
+        "**Green Encounter baseplate = the template** (COMPOSITION). Lay it along the edge of your table: you "
+        "build the template up from it, seen from the front, like a wall of building blocks.",
+        "**Grey plates = Ad hoc heading** (SECTION): a generic heading; write its name on the plate.",
+        "**Coloured plates = archetypes.** One per archetype, in its own colour, two building blocks wide. "
+        "Write the cardinality the archetype gets in your template on the plate; a new name goes on a yellow "
+        "sticker over the archetype's name.",
+        "**Everything stands on what it belongs to**, lined up with the studs: building blocks on their "
+        "archetype plate, an archetype plate on a heading or on the baseplate. The higher up, the deeper in "
+        "the template.",
     ]),
     ("h4", "Changing the template"),
     ("bullets", [
@@ -73,18 +77,18 @@ CONTENT = [
     ("p", "Start with the big picture: which archetypes does this form need? Use only the green Encounter, "
           "the grey headings and the archetype plates for now, and keep the building blocks aside."),
     ("bullets", [
-        "Stick the green **Encounter** at the top of your flipchart sheet and build downwards, like the tree in "
-        "Archetype Designer: the parts of the form in the same order, with the archetypes of a heading indented "
-        "under it.",
-        "Not every part of the form needs a grey heading strip: an archetype's name already works as a heading "
+        "Build on the green **Encounter** baseplate: the parts of the form from left to right, in the same "
+        "order as on the form, side by side with one free stud between them.",
+        "Not every part of the form needs a grey heading: an archetype's name already works as a heading "
         "(and you can rename it to match the form). Use a heading (**SECTION**) only to group several "
-        "archetypes, or to put one heading above a list that repeats. Write the names on the grey strips.",
+        "archetypes, or to put one heading above a list that repeats. Write the names on the grey plates.",
+        "Several archetypes under one heading? Stack them on the heading, one on top of the other.",
         "Find an archetype plate for each part of the form. Not every plate belongs in your template, and some "
         "parts need more than one.",
         "Read the purpose and the entry type (OBSERVATION, EVALUATION, INSTRUCTION, CLUSTER) on each plate: "
         "does it fit what the form records?",
         "Can the form hold more than one of something? Fill in the cardinality on that archetype's plate.",
-        "Found a dashed CLUSTER plate you need? Put it under the archetype it slots into.",
+        "Found a dashed CLUSTER plate you need? Put it on top of the archetype it slots into.",
         "Is there something on the form that none of the plates covers? Go to the **CKM desk** (your "
         "facilitator) and describe what you're looking for, as precisely as you can.",
         "Medications: in openEHR, the list of medication a patient uses is made of medication orders, even "
@@ -98,7 +102,8 @@ CONTENT = [
           "to use."),
     ("h3", "1.1 Main diagnosis (together)", None),
     ("bullets", [
-        "Rename the **Problem/Diagnosis** archetype to **Main Diagnosis**: write the new name on its plate.",
+        "Rename the **Problem/Diagnosis** archetype to **Main Diagnosis**: write the new name on a blank yellow "
+        "sticker and stick it over the name on its plate.",
         "Constrain out everything apart from **Problem/Diagnosis name**: take the other blocks off the plate.",
     ]),
 
@@ -113,7 +118,8 @@ CONTENT = [
     ("bullets", [
         "Keep only the element that says what the patient is allergic to, and rename it to match the form.",
         "The reaction is a CLUSTER. Find the building block on the allergy archetype that it slots into "
-        "(the CLUSTER slot), and put the reaction plate directly under that block.",
+        "(the CLUSTER slot), and put the reaction plate on top of that block. The plate is wider than the "
+        "block: let it hang over the side where there is room.",
         "Keep only the element that describes how the reaction showed itself. Rename it to match the form, and "
         "make it mandatory.",
     ]),
@@ -142,7 +148,8 @@ CONTENT = [
         "and fill in the cardinality.",
         "Which data type lets a nurse pick from a list, or write something under 'Other'?",
         "Can more than one 'Transported with' apply? What does that mean for the cardinality?",
-        "Add your new archetype to the template. Does it need a section, or does it go straight on the Encounter?",
+        "Where would your new archetype go in the template: under a heading, or straight on the Encounter? "
+        "It doesn't need to go on the baseplate.",
     ]),
     ("space", 4),
     ("image", "additional-info.png", 112, "Paper form: Additional information on admission"),
@@ -388,10 +395,10 @@ ANSWERS = [
     ("sub", "Based on the Nursing Admission Assessment COMPLETE template"),
     ("h2", "Exercise 0: Archetypes"),
     ("table", [
-        ("Structure", "Main diagnosis, Patient history and Frailty straight on the Encounter, without a heading: "
-                      "the (renamed) archetype is the heading. Ad hoc headings: **Vital signs** (groups three "
-                      "archetypes), **Allergies** and **Medications** (one heading above a repeating list, 0..*). "
-                      "Two of the five strips stay unused."),
+        ("Structure", "Main diagnosis, Patient history and Frailty straight on the Encounter baseplate, without a "
+                      "heading: the (renamed) archetype is the heading. Ad hoc headings: **Vital signs** (three "
+                      "archetypes stacked on it), **Allergies** and **Medications** (one heading above a repeating "
+                      "list, 0..*). Two of the five heading plates stay unused. The worked example shows it built."),
         ("Main diagnosis", "**Problem/Diagnosis** (EVALUATION)."),
         ("Patient history", "**Story/History** (OBSERVATION)."),
         ("Allergies", "**Adverse reaction risk** (EVALUATION), with **Adverse reaction event** (CLUSTER) "
@@ -413,12 +420,13 @@ ANSWERS = [
         ("1.2 Other parts", "Story/History: **Story**. Medication order: **Medication item**. "
                                "Height/Length: **Height/Length**. Body weight: **Weight**. Blood pressure: **Systolic** "
                                "and **Diastolic**, both **1..1**."),
-        ("1.2 Optional renames", "The template renames to the form's labels: plates Story/History to **Patient "
-                                 "History** and Blood pressure to **Blood Pressure**; elements Story to **Patient's "
-                                 "story**, Medication item to **Name**, Height/Length to "
-                                 "**Height**. Other names that match the form are fine too."),
-        ("1.3 Allergies", "Keep **Substance**, renamed **Allergy**. Adverse "
-                          "reaction event in the slot **Reaction event summary**. Keep **Manifestation**, renamed "
+        ("1.2 Optional renames", "The template renames to the form's labels: plate Story/History to **Patient "
+                                 "History**; elements Story to **Patient's story**, Medication item to **Name**, "
+                                 "Height/Length to **Height**. Other names that match the form are fine too. No "
+                                 "rename where only the capital letters differ (Blood pressure)."),
+        ("1.3 Allergies", "Keep **Substance**, renamed **Allergy**. Adverse reaction event on the slot block "
+                          "**Reaction event summary**, which goes on the left so the CLUSTER plate can hang over "
+                          "Patient History. Keep **Manifestation**, renamed "
                           "**Reaction**, **1..1**. The cluster itself stays 0..1, so an allergy without a "
                           "recorded reaction is still possible."),
         ("1.4 Medication directions", "Medication order: **Overall directions description**, renamed **Directions**. Tempting but "
@@ -432,7 +440,8 @@ ANSWERS = [
         ("Transported with", "Coded text, with free text for 'Other'. **0..***: more than one can apply."),
         ("Admission method", "Coded text. 0..1."),
         ("Additional help needed", "Boolean, or coded text Yes/No. 0..1."),
-        ("Placement", "Straight on the Encounter, no section needed. Cardinality on the plate: 0..1."),
+        ("Placement", "Straight on the Encounter, no section needed (not built on the baseplate). "
+                      "Cardinality on the plate: 0..1."),
     ]),
     ("p", "The filled-in building blocks are on the last page of this document."),
 ]

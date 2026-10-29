@@ -3,7 +3,7 @@
 
 Yellow = a template constraint, stuck on top of what the archetype allows:
   - cardinality stickers cover the cardinality chip (templates can only narrow it)
-  - rename stickers cover the field name (exercise renames + blank write-on ones)
+  - rename stickers cover the field name or an archetype plate's name (exercise renames + blank write-on ones)
 
 Usage:
     uv run make_stickers.py              # out/stickers.pdf, one page per group
@@ -26,13 +26,13 @@ CARDINALITY = [
     ("1..1 required", 6),          # 1.2 Systolic + Diastolic, 1.3 Reaction, plus spares
     (None, 6),                     # blank: write your own
 ]
-RENAMES = [                        # element renames in exercise 1.3 and 1.4 (archetype renames go on the plate)
+RENAMES = [                        # element renames in exercise 1.3 and 1.4; blanks for the rest, plates too
     ("Allergy", 1), ("Reaction", 1), ("Directions", 1),
     (None, 6),
 ]
 
 CARD_W, CARD_H = 28, 9
-NAME_W, NAME_H = 75, 14
+NAME_W, NAME_H = 75, 10            # fits the header of an archetype plate
 GAP = 4
 
 
@@ -62,14 +62,14 @@ def card_sticker(x, y, label):
 def name_sticker(x, y, label):
     p = [f'<rect x="{x}" y="{y}" width="{NAME_W}" height="{NAME_H}" rx="2" fill="{YELLOW}" '
          f'stroke="{EDGE}" stroke-width="0.35"/>',
-         f'<text x="{x + 3}" y="{y + 3.6}" font-size="2.2" font-weight="800" fill="{EDGE}" '
+         f'<text x="{x + 3}" y="{y + 3.1}" font-size="2" font-weight="800" fill="{EDGE}" '
          f'letter-spacing="0.15">RENAMED IN TEMPLATE</text>']
     if label:
-        size = fit(label, 6.5, NAME_W - 6)
-        p.append(f'<text x="{x + 3}" y="{y + NAME_H - 3}" font-size="{size}" font-weight="800" '
+        size = fit(label, 5.2, NAME_W - 6)
+        p.append(f'<text x="{x + 3}" y="{y + NAME_H - 1.9}" font-size="{size}" font-weight="800" '
                  f'fill="{INK}">{html.escape(label)}</text>')
     else:
-        p.append(f'<line x1="{x + 3}" y1="{y + NAME_H - 2.6}" x2="{x + NAME_W - 3}" y2="{y + NAME_H - 2.6}" '
+        p.append(f'<line x1="{x + 3}" y1="{y + NAME_H - 1.6}" x2="{x + NAME_W - 3}" y2="{y + NAME_H - 1.6}" '
                  f'stroke="{EDGE}" stroke-width="0.25" stroke-dasharray="1 1"/>')
     return p
 
@@ -97,7 +97,8 @@ def page_svg(group):
         p += card_sticker(x0 + c * (CARD_W + GAP), y + r * (CARD_H + GAP), label)
     y += ((len(stickers) - 1) // cols + 1) * (CARD_H + GAP) + 6
 
-    p += heading(x0, y, "Rename", "Stick over the field name. Blank ones: write the new name yourself.")
+    p += heading(x0, y, "Rename", "Stick over the field name, or over the name of an archetype plate. "
+                                  "Blank ones: write the new name yourself.")
     y += 9
     cols = int((A4[0] - 2 * MARGIN + GAP) // (NAME_W + GAP))
     stickers = [label for label, n in RENAMES for _ in range(n)]

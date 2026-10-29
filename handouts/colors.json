@@ -7,14 +7,6 @@
     "name": "Bright Blue",
     "hex": "#0055BF"
   },
-  "openEHR-EHR-CLUSTER.falls_risk_assessment_extension.v0": {
-    "name": "Bright Yellow",
-    "hex": "#F2CD37"
-  },
-  "openEHR-EHR-CLUSTER.therapeutic_direction.v1": {
-    "name": "Dark Green",
-    "hex": "#237841"
-  },
   "openEHR-EHR-EVALUATION.adverse_reaction_risk.v2": {
     "name": "Bright Orange",
     "hex": "#FE8A18"
@@ -38,10 +30,6 @@
   "openEHR-EHR-OBSERVATION.clinical_frailty_scale.v1": {
     "name": "Dark Bluish Gray",
     "hex": "#6C6E68"
-  },
-  "openEHR-EHR-OBSERVATION.falls_risk_assessment.v0": {
-    "name": "Tan",
-    "hex": "#E4CD9E"
   },
   "openEHR-EHR-OBSERVATION.height.v2": {
     "name": "Dark Blue",

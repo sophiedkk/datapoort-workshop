@@ -7,7 +7,7 @@ location, data type, cardinality and a short hint (units / value set).
 
 Usage:
     uv run make_bricks.py ARCHETYPE.adl [...]          # bricks for given archetypes
-    uv run make_bricks.py --all                         # every archetype in the export
+    uv run make_bricks.py --all                         # every archetype in the export, except EXCLUDED
     uv run make_bricks.py --all --dry-run               # only list fields, no images
 Options:
     --lang nl        use translated term texts (falls back to English)
@@ -37,6 +37,8 @@ DECOY_DIR = HERE.parent / "archetypes" / "decoys"
 OUT_DIR = HERE / "out"
 COLORS_FILE = HERE / "colors.json"
 TEMPLATE_FILE = EXPORT_DIR / "Nursing Admission Assessment COMPLETE.v0.t.json"
+# In the export (the templates use them) but taken off the form: too many vital signs. --all skips them.
+EXCLUDED = {"openEHR-EHR-OBSERVATION.pulse.v2", "openEHR-EHR-OBSERVATION.pulse_oximetry.v1"}
 
 FONT_FAMILY = "Lexend"
 
@@ -311,6 +313,8 @@ def is_light(hex_color):
 W, H = 1400, 840                  # canvas
 FX, FY, FW, FH = 30, 220, 1260, 590   # front face
 DX, DY = 90, -150                 # offset of the back edge of the top face
+STUD = FW / 4                     # stud pitch: a block is 4 studs wide; plates and headings are 8
+STUD_RX, STUD_RY, STUD_H = 54, 21, 30   # every stud, on blocks, plates, headings and the baseplate
 
 
 def brick_svg(color, archetype_label, f, terms, opts, header_only=False):
@@ -333,7 +337,7 @@ def brick_svg(color, archetype_label, f, terms, opts, header_only=False):
 
     # --- studs: 2 rows x 4 on the top face, back row first so front row overlaps it
     edge_s = edge
-    rx, ry, sh = 54, 21, 30
+    rx, ry, sh = STUD_RX, STUD_RY, STUD_H
     for row in (1, 0):
         t = 0.27 + 0.5 * row                # position across the depth of the top face
         for i in range(4):
@@ -447,8 +451,11 @@ def label_width(label, size):
     return text_width(name, size, 800) + (text_width("   " + kind, size, 600) if kind else 0)
 
 
-PW = 2 * W + round(6 * W / 90)    # plate canvas: as wide as two blocks plus the gap between them
+PW = FX + 2 * FW + DX + 20         # plate canvas: the front face is exactly two blocks (8 studs) wide
 PH = 620
+PLATE_FY, PLATE_FH = 190, 410
+PLATE_HB = 172                     # plate header: a rename sticker (10 mm high) fits on it
+PLATE_NAME_W = 1100                # the archetype name stays under a rename sticker (75 mm)
 
 
 def plate_svg(color, archetype_label, purpose, plugs_into=(), shown=None, binding=""):
@@ -456,8 +463,8 @@ def plate_svg(color, archetype_label, purpose, plugs_into=(), shown=None, bindin
     purpose, where a CLUSTER plugs in, and write-in lines for its name and cardinality in the template.
 
     plugs_into: [(slot name, host archetype name, host colour), ...] for CLUSTER archetypes."""
-    fx, fy, fh = FX, 190, 410
-    fw = PW - FX - DX - 20
+    fx, fy, fh = FX, PLATE_FY, PLATE_FH
+    fw = 2 * FW
     dx, dy = DX, DY
     top, side, edge = shade(color, 1.25), shade(color, 0.72), shade(color, 0.55)
     head_ink = "#1B1B1B" if is_light(color) else "#FFFFFF"
@@ -471,15 +478,15 @@ def plate_svg(color, archetype_label, purpose, plugs_into=(), shown=None, bindin
          f'<polygon points="{fx + fw},{fy} {fx + fw + dx},{fy + dy} {fx + fw + dx},{fy + fh + dy} {fx + fw},{fy + fh}" '
          f'fill="{side}" stroke="{edge}" stroke-width="4" stroke-linejoin="round"/>',
          f'<rect x="{fx}" y="{fy}" width="{fw}" height="{fh}" fill="{color}" stroke="{edge}" stroke-width="4"/>']
-    # more, smaller studs than a block: it's a plate. A CLUSTER plate gets studs in the colour of
-    # the archetype it slots into.
+    # the same studs as a block, on the same grid (8 studs: two blocks), so pieces line up. A CLUSTER
+    # plate gets studs in the colour of the archetype it slots into.
     stud = plugs_into[0][2] if plugs_into else color
     s_top, s_side, s_edge = shade(stud, 1.25), shade(stud, 0.72), shade(stud, 0.55)
-    rx, ry, sh = 40, 15, 22
-    for t in (0.75, 0.27):
-        for i in range(16):
-            cx = fx + fw * (i + 0.5) / 16 + dx * t
-            cy = fy + dy * t - sh + 6
+    rx, ry, sh = STUD_RX, STUD_RY, STUD_H
+    for t in (0.77, 0.27):
+        for i in range(8):
+            cx = fx + (i + 0.5) * STUD + dx * t
+            cy = fy + dy * t - sh + 8
             p.append(f'<path d="M{cx - rx},{cy} L{cx - rx},{cy + sh} A{rx},{ry} 0 0 0 {cx + rx},{cy + sh} '
                      f'L{cx + rx},{cy} Z" fill="{s_side}" stroke="{s_edge}" stroke-width="3"/>')
             p.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="{s_top}" stroke="{s_edge}" '
@@ -487,48 +494,52 @@ def plate_svg(color, archetype_label, purpose, plugs_into=(), shown=None, bindin
     sx, sy, sw, shh = fx + 30, fy + 26, fw - 60, fh - 52
     pad = 40
     dashed = ' stroke-dasharray="22 14"' if is_cluster else ""
-    hb = 108                                        # colour header with the archetype name, the eye-catcher
+    hb = PLATE_HB                                   # colour header with the archetype name, the eye-catcher
     p += [f'<rect x="{sx}" y="{sy}" width="{sw}" height="{shh}" rx="22" fill="#fff" stroke="{edge}" '
           f'stroke-width="4"{dashed}/>',
           f'<path d="M{sx},{sy + hb} V{sy + 22} a22,22 0 0 1 22,-22 H{sx + sw - 22} a22,22 0 0 1 22,22 V{sy + hb} Z" '
           f'fill="{color}"/>']
+    # the name fits under a rename sticker; the archetype type goes on the right
+    name, kind = archetype_label
+    name_size = next((sz for sz in range(104, 63, -4) if text_width(name, sz) <= PLATE_NAME_W), 64)
+    p.append(f'<text x="{sx + pad}" y="{sy + hb / 2 + name_size * 0.36}" font-size="{name_size}" font-weight="800" '
+             f'fill="{head_ink}">{esc(ellipsize(name, name_size, PLATE_NAME_W, 800))}</text>')
     tag = "CLUSTER: GOES IN A SLOT" if is_cluster else "ARCHETYPE"
-    name_w = sw - 2 * pad - text_width(tag, 26, 800) - 60
-    name_size = next((sz for sz in range(72, 47, -4) if label_width(archetype_label, sz) <= name_w), 48)
-    p.append(name_and_kind(archetype_label, sx + pad, sy + hb / 2 + name_size * 0.36, name_size, head_ink))
-    p.append(f'<text x="{sx + sw - pad}" y="{sy + hb / 2 + 9}" font-size="26" font-weight="800" fill="{head_ink}" '
+    p.append(f'<text x="{sx + sw - pad}" y="{sy + 78}" font-size="52" font-weight="600" fill="{head_ink}" '
+             f'fill-opacity="0.8" text-anchor="end">{esc(kind)}</text>')
+    p.append(f'<text x="{sx + sw - pad}" y="{sy + 132}" font-size="24" font-weight="800" fill="{head_ink}" '
              f'text-anchor="end" letter-spacing="2">{tag}</text>')
+    # right column: elements shown, cardinality write-in at the bottom
+    col_w = 560
+    right = sx + sw - pad
     if shown and shown[0] < shown[1]:
-        p.append(f'<text x="{sx + sw - pad}" y="{sy + hb + 46}" font-size="28" font-weight="800" fill="#777" '
+        p.append(f'<text x="{right}" y="{sy + hb + 44}" font-size="28" font-weight="800" fill="#777" '
                  f'text-anchor="end">{shown[0]} of {shown[1]} elements shown</text>')
-        purpose_w = sw - 2 * pad - 420
-    else:
-        purpose_w = sw - 2 * pad
-    if plugs_into:                                  # keep clear of the slot-in picture
-        purpose_w = min(purpose_w, sw - 2 * pad - 600 - CLICK_W * 1.05 - 40)
-    purpose_lines = wrap(purpose, 38, purpose_w, weight=600)
-    if len(purpose_lines) > 2:
-        purpose_lines = [purpose_lines[0], ellipsize(" ".join(purpose_lines[1:]), 38, purpose_w)]
-    y = sy + hb + 4
-    for line in purpose_lines:
-        y += 48
-        p.append(f'<text x="{sx + pad}" y="{y}" font-size="38" font-weight="600" fill="#333">{esc(line)}</text>')
-    for slot, host, host_color in plugs_into[:1]:
-        y += 50
-        p.append(f'<text x="{sx + pad}" y="{y}" font-size="34" font-weight="800" fill="#1B1B1B">Plugs into:</text>')
-        x = sx + pad + text_width("Plugs into: ", 34, 800)
-        p.append(f'<text x="{x}" y="{y}" font-size="34" font-weight="600" fill="#1B1B1B">'
-                 f'{esc(slot)} (a building block of {esc(host)})</text>')
-        p.append(click_icon(sx + sw - pad - CLICK_W * 1.05 - 600, sy + hb + 8, host_color, color, scale=1.05))
     if binding:
-        p.append(f'<text x="{sx + sw - pad}" y="{sy + hb + 94}" font-size="28" font-weight="800" fill="#1B1B1B" '
+        p.append(f'<text x="{right}" y="{sy + hb + 84}" font-size="28" font-weight="800" fill="#1B1B1B" '
                  f'text-anchor="end">{esc(binding)}</text>')
-    # write-in lines: name in template (left) and cardinality (right)
+    purpose_w = sw - 2 * pad - col_w - 40
+    if plugs_into:                                  # keep clear of the slot-in picture
+        purpose_w -= CLICK_W * 1.05 + 40
+        p.append(click_icon(right - col_w - CLICK_W * 1.05 - 20, sy + hb + 12, plugs_into[0][2], color, scale=1.05))
+    size, step = 44, 52
+    keep = 2 if plugs_into else 3
+    purpose_lines = wrap(purpose, size, purpose_w, weight=600)
+    if len(purpose_lines) > keep:
+        purpose_lines = purpose_lines[:keep - 1] + [ellipsize(" ".join(purpose_lines[keep - 1:]), size, purpose_w)]
+    y = sy + hb + 2
+    for line in purpose_lines:
+        y += step
+        p.append(f'<text x="{sx + pad}" y="{y}" font-size="{size}" font-weight="600" fill="#1B1B1B">{esc(line)}</text>')
+    for slot, host, _ in plugs_into[:1]:
+        y += step
+        p.append(f'<text x="{sx + pad}" y="{y}" font-size="36" font-weight="800" fill="#1B1B1B">Plugs into:</text>')
+        x = sx + pad + text_width("Plugs into: ", 36, 800)
+        p.append(f'<text x="{x}" y="{y}" font-size="36" font-weight="600" fill="#1B1B1B">'
+                 f'{esc(slot)} (a building block of {esc(host)})</text>')
+    # cardinality the archetype gets in the template (a rename goes on a sticker over the name)
     label_y, line_y = sy + shh - 62, sy + shh - 22
-    split = sx + sw - pad - 560
-    p.append(f'<text x="{sx + pad}" y="{label_y}" font-size="24" font-weight="800" fill="#777" '
-             f'letter-spacing="1.5">NAME IN TEMPLATE</text>')
-    p.append(f'<line x1="{sx + pad}" y1="{line_y}" x2="{split - 60}" y2="{line_y}" stroke="#9A9A9A" stroke-width="3"/>')
+    split = right - col_w
     p.append(f'<text x="{split}" y="{label_y}" font-size="24" font-weight="800" fill="#777" '
              f'letter-spacing="1.5">CARDINALITY</text>')
     for lx in (split, split + 330):
@@ -595,17 +606,16 @@ CLICK_W, CLICK_H = 110, 96          # click_icon size at scale 1
 
 
 def click_icon(x, y, element_color, cluster_color, scale=1.0):
-    """Assembly-instruction style, built top to bottom like the form: the element with the slot on top,
-    the CLUSTER below it, with an up arrow: the cluster slots in under the element.
+    """Assembly-instruction style: the CLUSTER comes down onto the element with the slot, and stands on it.
     CLICK_W x CLICK_H at scale 1; (x, y) is the top left."""
     w, h = 64 * scale, 22 * scale
     ax = x + w + 30 * scale
-    return (f'<g>{mini_brick(x, y + 20 * scale, w, h, element_color)}'
-            f'{mini_brick(x, y + 74 * scale, w, h, cluster_color)}'
-            f'<line x1="{ax}" y1="{y + 30 * scale}" x2="{ax}" y2="{y + 82 * scale}" stroke="#1B1B1B" '
+    return (f'<g>{mini_brick(x, y + 74 * scale, w, h, element_color)}'
+            f'{mini_brick(x, y + 20 * scale, w, h, cluster_color)}'
+            f'<line x1="{ax}" y1="{y + 20 * scale}" x2="{ax}" y2="{y + 72 * scale}" stroke="#1B1B1B" '
             f'stroke-width="{4 * scale}" stroke-linecap="round"/>'
-            f'<polygon points="{ax - 9 * scale},{y + 36 * scale} {ax + 9 * scale},{y + 36 * scale} '
-            f'{ax},{y + 21 * scale}" fill="#1B1B1B"/></g>')
+            f'<polygon points="{ax - 9 * scale},{y + 66 * scale} {ax + 9 * scale},{y + 66 * scale} '
+            f'{ax},{y + 81 * scale}" fill="#1B1B1B"/></g>')
 
 
 def first_sentence(text):
@@ -676,11 +686,14 @@ def sheet_header(title, color, x0, page_note="", y=MARGIN, hint=True):
     """Title strip of a sheet: colour swatch, archetype name, cutting hint. Without a colour, no swatch."""
     swatch = (f'<rect x="{x0}" y="{y + 1}" width="10" height="6" rx="1" fill="{color}" stroke="#555" '
               f'stroke-width="0.2"/>' if color else "")
+    label = (title, "") if isinstance(title, str) else (title[0], title[1] + page_note)
+    tx = x0 + (13 if color else 0)
+    hint_text = "✂ cut along the dashed lines"
+    room = A4[0] - x0 - tx - label_width(label, 4.6) - 4
     cut = (f'<text x="{A4[0] - x0}" y="{y + 6}" font-size="2.8" font-weight="600" fill="#888" '
-           f'text-anchor="end">✂ cut along the dashed lines</text>' if hint else "")
+           f'text-anchor="end">{hint_text}</text>' if hint and text_width(hint_text, 2.8, 600) <= room else "")
     return (f'<g font-family="{FONT_FAMILY}, sans-serif">' + swatch
-            + name_and_kind((title, "") if isinstance(title, str) else (title[0], title[1] + page_note),
-                            x0 + (13 if color else 0), y + 6, 4.6, "#1B1B1B") + cut + '</g>')
+            + name_and_kind(label, tx, y + 6, 4.6, "#1B1B1B") + cut + '</g>')
 
 
 def sheet_pages(svgs, title=None, color="#cccccc", footer=True, gap=6, note=""):
@@ -689,7 +702,8 @@ def sheet_pages(svgs, title=None, color="#cccccc", footer=True, gap=6, note=""):
     With a title, it goes at the top of each page, and (footer) again at the bottom, so a pile of
     half-cut pages can still be told apart. A note (such as "6 of 26 elements") follows the title.
 
-    Items keep their own aspect ratio (plates are lower than blocks); a row is as tall as its tallest item."""
+    Everything is printed at the same scale (a plate is exactly two blocks wide) and a wide item gets a
+    row of its own; a row is as tall as its tallest item."""
     bw = MM_PER_BRICK
     cols = int((A4[0] - 2 * MARGIN + gap) // (bw + gap))
     x0 = (A4[0] - cols * bw - (cols - 1) * gap) / 2
@@ -697,17 +711,20 @@ def sheet_pages(svgs, title=None, color="#cccccc", footer=True, gap=6, note=""):
     bottom = A4[1] - MARGIN - (12 if title and footer else 0)
 
     full = cols * bw + (cols - 1) * gap
+    scale = bw / W                  # every piece at the same scale, so plates are exactly two blocks wide
 
     def size(svg):
         """canvas width, height, printed width and printed height (wide items span the whole row)"""
         w, h = (float(v) for v in re.search(r'width="([\d.]+)" height="([\d.]+)"', svg).groups())
-        pw = full if w > 1.5 * W else bw
-        return w, h, pw, pw * h / w
+        return w, h, w * scale, h * scale
+
+    def wide(svg):
+        return size(svg)[0] > 1.5 * W
 
     # rows: a wide item gets a row of its own, blocks fill rows of `cols`; then pages of rows
     rows = []
     for svg in svgs:
-        if size(svg)[2] == full or not rows or len(rows[-1]) == cols or size(rows[-1][0])[2] == full:
+        if wide(svg) or not rows or len(rows[-1]) == cols or wide(rows[-1][0]):
             rows.append([svg])
         else:
             rows[-1].append(svg)
@@ -736,7 +753,7 @@ def sheet_pages(svgs, title=None, color="#cccccc", footer=True, gap=6, note=""):
             rh = max(size(svg)[3] for svg in row)
             for c, svg in enumerate(row):
                 w, h, iw, ih = size(svg)
-                x = x0 + c * (bw + gap)
+                x = x0 + (full - iw) / 2 if wide(svg) else x0 + c * (bw + gap)
                 # light cut guide around each item
                 parts.append(f'<rect x="{x - 1.5}" y="{y - 1.5}" width="{iw + 3}" height="{ih + 3}" fill="none" '
                              f'stroke="#666" stroke-width="0.3" stroke-dasharray="1.5 1.5"/>')
@@ -967,7 +984,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     opts = ap.parse_args()
 
-    paths = sorted(EXPORT_DIR.rglob("*.adl")) if opts.all else opts.archetypes
+    paths = [p for p in sorted(EXPORT_DIR.rglob("*.adl")) if p.stem not in EXCLUDED] if opts.all else opts.archetypes
     if not paths:
         ap.error("give one or more .adl files, or --all")
     opts.template_usage = load_template(opts.template) if opts.template.exists() else {}

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Offline demo page: out/demo.html, one self-contained file (font, pieces and forms embedded).
 
-Drag the Encounter strip, plates, building blocks, stickers and paper forms from the tray onto the
-flipchart to show what participants do. Double-click a plate, strip, blank sticker or text note to
-write on it; the x button or the Delete key takes a piece off the sheet.
+A table with the Encounter baseplate along the bottom: drag headings, plates, building blocks, stickers
+and paper forms from the tray and build the template up from the baseplate, in front view. Pieces click
+onto the stud grid and onto the piece below them. Double-click a plate, heading, the baseplate, a blank
+sticker or a text note to write on it; the x button or the Delete key takes a piece off the table.
+"Show the worked example" builds the answer key (make_plates.example).
 Run after make_bricks.py (like make_print.py):
 
     uv run make_demo.py
@@ -15,15 +17,15 @@ import re
 
 from PIL import Image
 
-from make_bricks import DX, FX, OUT_DIR, PH, PW, W, font_file
-from make_plates import COMPOSITION, SECTION, concept, ensure_colors
-from make_plates import plate as strip_parts
-from make_print import CKM_PILE, EXCLUDED, EXERCISE_3, archetype_names, bricks, plate
+from make_bricks import OUT_DIR, font_file
+from make_plates import (BLOCK, COMPOSITION, PLATE, SECTION, HEADINGS, STUD_MM, baseplate_piece, ensure_colors,
+                         example, heading_piece, plate_write_ins)
+from make_print import CKM_PILE, EXCLUDED, EXERCISE_3, archetype_names, plate
 from make_stickers import CARD_H, CARD_W, CARDINALITY, NAME_H, NAME_W, RENAMES, card_sticker, name_sticker
 
 HERE = OUT_DIR.parent
 DEMO = OUT_DIR / "demo.html"
-BLOCK_MM = 90
+TABLE = {"w": 1200, "h": 460}               # the table in mm; the baseplate lies along the bottom
 FORMS = [("Nursing Admission Assessment", HERE / "assets" / "nursing-admission.png"),
          ("Additional information on admission", HERE / "assets" / "additional-info.png")]
 FORM_DPI = 150                              # the form images are rendered at 150 dpi (see ../README.md)
@@ -39,26 +41,18 @@ def mm_svg(parts, w, h, pad=0.5):
             f'font-family="Lexend, sans-serif">' + "".join(parts) + "</svg>")
 
 
-def plate_write_ins():
-    """Where a plate's 'name in template' and cardinality lines are, as fractions of the plate."""
-    fy, fh = 190, 410
-    fw = PW - FX - DX - 20
-    sx, sy, sw = FX + 30, fy + 26, fw - 60
-    line_y = (sy + fh - 52 - 26) / PH
-    split = sx + sw - 40 - 560
-    return [{"key": "name", "x": (sx + 40) / PW, "y": line_y, "size": 0.032, "bg": True, "prompt": "Name in template"},
-            {"key": "card", "x": (split + 280) / PW, "y": line_y, "size": 0.032, "anchor": "middle", "bg": True,
-             "prompt": "Cardinality, e.g. 0..1 or 0..*"}]
+def face(piece):
+    """Front face (left, top, bottom, width) as fractions of the piece's width, for snapping."""
+    return [v / piece["w"] for v in piece["face"]]
 
 
-def strip(aid, kind, h, label, note):
-    w = 180
-    name = concept(aid)[0]
-    color = ensure_colors()[aid]["hex"]
-    svg = mm_svg(strip_parts(1, 10, w, h, color, (name, kind), note, label, 12), w + 7.5, h + 11.5, 0)
-    vw, vh = w + 7.5, h + 11.5
-    write = [{"key": "name", "x": 6.2 / vw, "y": (10 + h - 6.8) / vh, "size": 0.042, "bg": True, "prompt": label.capitalize()}]
-    return {"kind": "strip", "w": vw, "svg": svg, "write": write}
+def strip(piece, **more):
+    return {"kind": "strip", "w": piece["w"], "svg": mm_svg(piece["parts"], piece["w"], piece["h"], 0),
+            "write": piece["write"], "face": face(piece), **more}
+
+
+def blocks(aid):
+    return [(path.stem, path.read_text(encoding="utf-8")) for path in sorted((OUT_DIR / aid).glob("[0-9][0-9]_*.svg"))]
 
 
 def items():
@@ -66,33 +60,34 @@ def items():
     names = archetype_names()
     held_back = set(CKM_PILE) | {EXERCISE_3, COMPOSITION, SECTION}
     table = sorted((aid for aid in colors if aid not in held_back), key=lambda aid: names[aid].lower())
-    plate_w = BLOCK_MM * PW / W
-    out = []
+    out = [{"id": "base", "fixed": True, **strip(baseplate_piece(), aid=COMPOSITION)}]   # always on the table
 
     def add(tab, group, item):
         out.append({"id": f"i{len(out)}", "tab": tab, "group": group, **item})
 
-    add("Structure", "Encounter (COMPOSITION)",
-        strip(COMPOSITION, "Composition", 30, "TEMPLATE NAME", "Stick this at the top of the flipchart sheet"))
-    for _ in range(5):
-        add("Structure", "Ad hoc headings (SECTION)",
-            strip(SECTION, "Section", 22, "SECTION NAME", "A heading: rename it"))
+    def plate_item(aid):
+        return {"kind": "plate", "aid": aid, "w": PLATE["w"], "svg": inline(plate(aid)), "write": plate_write_ins(),
+                "face": face(PLATE)}
+
+    def block_items(tab, aid):
+        for stem, svg in blocks(aid):
+            add(tab, names[aid], {"kind": "block", "aid": aid, "stem": stem, "w": BLOCK["w"], "svg": inline(svg),
+                                  "face": face(BLOCK)})
+
+    for _ in range(HEADINGS):
+        add("Structure", "Ad hoc headings (SECTION)", strip(heading_piece(), aid=SECTION))
     for aid in table:
-        add("Plates", "Archetype plates", {"kind": "plate", "w": plate_w, "svg": inline(plate(aid)),
-                                           "write": plate_write_ins()})
+        add("Plates", "Archetype plates", plate_item(aid))
     for aid in table:
-        for svg in bricks(aid):
-            add("Blocks", names[aid], {"kind": "block", "w": BLOCK_MM, "svg": inline(svg)})
+        block_items("Blocks", aid)
     for aid in CKM_PILE:
-        add("CKM desk", names[aid], {"kind": "plate", "w": plate_w, "svg": inline(plate(aid)),
-                                     "write": plate_write_ins()})
-        for svg in bricks(aid):
-            add("CKM desk", names[aid], {"kind": "block", "w": BLOCK_MM, "svg": inline(svg)})
+        add("CKM desk", names[aid], plate_item(aid))
+        block_items("CKM desk", aid)
     for label, n in CARDINALITY:
         for _ in range(min(n, 3)):
             write = [] if label else [{"key": "text", "x": 0.5, "y": 0.72, "size": 0.22, "anchor": "middle",
                                        "prompt": "Cardinality, e.g. 1..1"}]
-            add("Stickers", "Cardinality", {"kind": "sticker", "w": CARD_W + 1,
+            add("Stickers", "Cardinality", {"kind": "sticker", "sticker": "card", "label": label, "w": CARD_W + 1,
                                             "svg": mm_svg(card_sticker(0, 0, label if label else ""), CARD_W,
                                                           CARD_H), "write": write})
     for title, path in FORMS:
@@ -100,10 +95,10 @@ def items():
         add("Forms", "Paper forms", {"kind": "form", "w": mm,
                                      "svg": f'<img alt="Paper form: {title}" src="{data_uri(path, "image/png")}">'})
     for label, n in RENAMES:
-        for _ in range(min(n, 3)):
-            write = [] if label else [{"key": "text", "x": 3.5 / (NAME_W + 1), "y": (NAME_H - 2.5) / (NAME_H + 1),
-                                       "size": 0.1, "prompt": "New name"}]
-            add("Stickers", "Rename", {"kind": "sticker", "w": NAME_W + 1,
+        for _ in range(n):                    # enough blanks for the worked example
+            write = [] if label else [{"key": "text", "x": 3.5 / (NAME_W + 1), "y": (NAME_H - 1.6) / (NAME_H + 1),
+                                       "size": 0.068, "prompt": "New name"}]
+            add("Stickers", "Rename", {"kind": "sticker", "sticker": "name", "label": label, "w": NAME_W + 1,
                                        "svg": mm_svg(name_sticker(0, 0, label), NAME_W, NAME_H), "write": write})
     return out
 
@@ -115,7 +110,10 @@ def data_uri(path, mime):
 def main():
     page = (PAGE
             .replace("/*FONT*/", data_uri(font_file("Lexend-VariableFont_wght.ttf"), "font/ttf"))
-            .replace("/*ITEMS*/", json.dumps(items()).replace("</", "<\\/")))
+            .replace("/*ITEMS*/", json.dumps(items()).replace("</", "<\\/"))
+            .replace("/*EXAMPLE*/", json.dumps(example()))
+            .replace("/*TABLE*/", json.dumps(TABLE))
+            .replace("/*STUD*/", f"{STUD_MM:g}"))
     DEMO.write_text(page, encoding="utf-8")
     print(f"-> {DEMO} ({DEMO.stat().st_size / 1e6:.1f} MB)")
 
@@ -168,12 +166,14 @@ label { font-size: 14px; font-weight: 600; color: var(--muted); display: flex; g
 #wrap { overflow: hidden; position: relative; touch-action: none; }
 #board { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: var(--paper);
          border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.06); }
-#board::before { content: "Flipchart sheet: the template"; position: absolute; left: 16px; top: 10px;
-                 font-size: 13px; font-weight: 600; color: #b3aea4; }
+#board::before { content: "The table: build the template up from the Encounter baseplate"; position: absolute;
+                 left: 24px; top: 16px; font-size: 40px; font-weight: 600; color: #c9c4ba; }
+#wrap.panning { cursor: grabbing; }
 .piece { touch-action: none; user-select: none; cursor: grab; }
 .piece svg { display: block; width: 100%; height: auto; pointer-events: none; }
 #board .piece { position: absolute; filter: drop-shadow(0 2px 3px rgba(0,0,0,.15)); }
-.piece.dragging { cursor: grabbing; filter: drop-shadow(0 8px 14px rgba(0,0,0,.25)); z-index: 100000 !important; }
+.piece.dragging { cursor: grabbing; filter: drop-shadow(0 8px 14px rgba(0,0,0,.25)); z-index: 9999999 !important; }
+#board .piece.fixed { cursor: default; }
 .ink { position: absolute; font-family: Lexend, sans-serif; font-weight: 600; color: #1d3f8f;
        white-space: nowrap; pointer-events: none; transform: translateY(-100%); line-height: 1; }
 .ink.middle { transform: translate(-50%, -100%); }
@@ -185,15 +185,21 @@ label { font-size: 14px; font-weight: 600; color: var(--muted); display: flex; g
               font-family: Lexend, sans-serif; font-weight: 600; color: #1d3f8f;
               white-space: pre-wrap; min-width: 2em; line-height: 1.25; }
 .piece.note[contenteditable="true"] { cursor: text; outline: 2px solid #1d3f8f; user-select: text; }
-.del { display: none; position: absolute; top: -12px; right: -12px; width: 26px; height: 26px; padding: 0;
-       border-radius: 50%; font-size: 16px; line-height: 1; background: var(--ink); color: #fff; border: 2px solid #fff;
-       z-index: 2; font-family: Lexend, sans-serif; }
+/* handles keep their on-screen size whatever the zoom: --inv = 1 / zoom, set by applyView */
+.del { display: none; position: absolute; top: calc(-12px * var(--inv, 1)); right: calc(-12px * var(--inv, 1));
+       width: calc(26px * var(--inv, 1)); height: calc(26px * var(--inv, 1)); padding: 0;
+       border-radius: 50%; font-size: calc(16px * var(--inv, 1)); line-height: 1; background: var(--ink); color: #fff;
+       border: calc(2px * var(--inv, 1)) solid #fff; z-index: 2; font-family: Lexend, sans-serif; }
 #board .piece:hover > .del, #board .piece.selected > .del { display: block; }
 .piece.note > .del { right: -34px; top: -6px; }
-.grip { display: none; position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border-radius: 4px;
-        background: #fff; border: 2px solid var(--ink); cursor: nwse-resize; z-index: 2; }
+.grip { display: none; position: absolute; right: calc(-8px * var(--inv, 1)); bottom: calc(-8px * var(--inv, 1));
+        width: calc(18px * var(--inv, 1)); height: calc(18px * var(--inv, 1)); border-radius: calc(4px * var(--inv, 1));
+        background: #fff; border: calc(2px * var(--inv, 1)) solid var(--ink); cursor: nwse-resize; z-index: 2; }
 #board .piece:hover > .grip, #board .piece.selected > .grip { display: block; }
-#board .piece.selected { outline: 2px dashed #1d3f8f; outline-offset: 3px; }
+#board .piece.selected { outline: calc(2px * var(--inv, 1)) dashed #1d3f8f; outline-offset: calc(3px * var(--inv, 1)); }
+/* the baseplate stays put; pieces on the stud grid keep their size */
+#board .piece.fixed > .del, #board .piece.fixed > .grip, #board .piece[data-face] > .grip { display: none !important; }
+.show .wide { width: 100%; margin-top: 12px; }
 button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline-offset: 2px; }
 /* our own dialog instead of the browser's prompt() and confirm() boxes */
 #ask { border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px 18px; width: min(420px, 90vw);
@@ -207,8 +213,7 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
 #ask input:focus { outline: 2px solid #1d3f8f; outline-offset: 0; border-color: transparent; }
 #ask .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 #ask .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-/* phones: the tray is a drawer, the sheet is a fixed-size flipchart you pinch-zoom and pan, and
-   handles keep their on-screen size whatever the zoom (--inv = 1 / zoom, set by applyView) */
+/* phones: the tray is a drawer, you pinch-zoom and pan the table, and handles are finger-sized */
 @media (max-width: 700px), (pointer: coarse) and (max-height: 500px) {
   body { grid-template-columns: 1fr; }
   #side { position: fixed; left: 0; top: 0; bottom: 0; width: min(340px, 86vw); height: auto; z-index: 400000;
@@ -241,6 +246,7 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
     <p class="sub">Datapoort workshop demo</p>
     <label for="view">Show</label>
     <select id="view"></select>
+    <button id="example" class="wide">Show the worked example</button>
   </div>
   <div id="tray" aria-label="Pieces"></div>
 </aside>
@@ -248,12 +254,12 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
   <div id="board"></div>
   <div id="tools" role="toolbar" aria-label="Sheet tools">
     <button id="openTray" class="phone-only">Pieces</button>
-    <div class="size">Size <button id="smaller" aria-label="Smaller pieces">−</button>
-      <button id="bigger" aria-label="Bigger pieces">+</button></div>
+    <div class="size">Zoom <button id="zoomOut" aria-label="Zoom out">−</button>
+      <button id="zoomIn" aria-label="Zoom in">+</button></div>
     <div class="sep"></div>
     <button id="writeBtn" class="phone-only" disabled>Write</button>
     <button id="addText">Text</button>
-    <button id="fit" class="phone-only">Fit</button>
+    <button id="fit">Fit</button>
     <button id="reset">Clear</button>
     <button id="full" class="icon" aria-label="Full screen" title="Full screen" hidden>
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -272,9 +278,12 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
 </dialog>
 <script>
 const ITEMS = /*ITEMS*/;
+const EXAMPLE = /*EXAMPLE*/;                  // the answer key, in mm from the baseplate's top left
+const TABLE = /*TABLE*/;                      // mm
+const STUD = /*STUD*/;                        // stud pitch in mm: a block is 4 studs, a plate 8
 const viewOf = i => i.tab === "Blocks" ? "Blocks|" + i.group : i.tab;
 const VIEWS = [                               // the tray's "Show" menu, in workshop order
-  ["Exercise 0: choose the archetypes", [["Structure", "Encounter and headings"], ["Plates", "Archetype plates"],
+  ["Exercise 0: choose the archetypes", [["Structure", "Ad hoc headings"], ["Plates", "Archetype plates"],
                                          ["CKM desk", "CKM desk"]]],
   ["Exercise 1: choose the elements",
    [...new Set(ITEMS.filter(i => i.tab === "Blocks").map(i => i.group))].map(g => ["Blocks|" + g, "Building blocks: " + g])
@@ -284,15 +293,15 @@ const VIEWS = [                               // the tray's "Show" menu, in work
 const state = { view: "Structure", scale: 3.5, placed: new Map(), z: 1, selected: null, notes: 0,
                 zoom: 1, pan: { x: 24, y: 24 }, phone: false };
 const PHONE = "(max-width: 700px), (pointer: coarse) and (max-height: 500px)";   // same as the CSS
-const SHEET = { w: 1000, h: 1400 };           // the flipchart on a phone, in px before zooming
 const NOTE_MM = 7;                            // text note font size, mm on the sheet
 const $ = s => document.querySelector(s);
 const tray = $("#tray"), board = $("#board"), wrap = $("#wrap");
 
 function piece(item) {
   const el = document.createElement("div");
-  el.className = "piece " + item.kind;
+  el.className = "piece " + item.kind + (item.fixed ? " fixed" : "");
   el.dataset.id = item.id;
+  if (item.face) el.dataset.face = "";
   el.innerHTML = item.svg || "";
   (item.write || []).forEach(w => {
     const t = document.createElement("div");
@@ -365,31 +374,69 @@ function applyView() {
   board.style.setProperty("--inv", 1 / state.zoom);
 }
 
-function fit() {                              // the whole sheet in view, above the toolbar
-  const w = wrap.clientWidth, h = wrap.clientHeight - $("#tools").offsetHeight - 20;
-  state.zoom = Math.min((w - 20) / SHEET.w, (h - 20) / SHEET.h);
-  state.pan = { x: (w - SHEET.w * state.zoom) / 2, y: 10 };
+function fit() {                              // the whole table in view (on a phone: above the toolbar)
+  const s = state.scale, w = wrap.clientWidth;
+  const h = wrap.clientHeight - (state.phone ? $("#tools").offsetHeight + 20 : 0);
+  state.zoom = Math.min((w - 20) / (TABLE.w * s), (h - 20) / (TABLE.h * s));
+  state.pan = { x: (w - TABLE.w * s * state.zoom) / 2, y: (h - TABLE.h * s * state.zoom) / 2 };
   applyView();
+}
+
+function zoomAt(clientX, clientY, factor) {   // keeps the table point under (clientX, clientY) in place
+  const r = wrap.getBoundingClientRect(), z = Math.min(3, Math.max(0.08, state.zoom * factor));
+  const sx = (clientX - r.left - state.pan.x) / state.zoom, sy = (clientY - r.top - state.pan.y) / state.zoom;
+  state.zoom = z;
+  state.pan = { x: clientX - r.left - sx * z, y: clientY - r.top - sy * z };
+  applyView();
+}
+
+// Front face of a placed piece, in px on the table: left, right, top, bottom.
+function faceOf(item, pos) {
+  const w = item.w * state.scale, f = item.face;
+  return { l: pos.x + f[0] * w, r: pos.x + (f[0] + f[3]) * w, t: pos.y + f[1] * w, b: pos.y + f[2] * w };
+}
+
+// Pieces click into place: the front face on the baseplate's stud grid, and standing on the top of
+// the piece just below it when it is close.
+function snap(item, pos) {
+  if (!item.face || item.fixed) return;
+  const s = state.scale, w = item.w * s, f = item.face, pitch = STUD * s;
+  const base = faceOf(ITEMS[0], state.placed.get("base"));
+  const l = base.l + Math.round((pos.x + f[0] * w - base.l) / pitch) * pitch;
+  pos.x = l - f[0] * w;
+  const r = l + f[3] * w, b = pos.y + f[2] * w;
+  let best = null;
+  state.placed.forEach((p, id) => {
+    const other = ITEMS.find(i => i.id === id);
+    if (id === item.id || !other.face) return;
+    const g = faceOf(other, p);
+    if (g.r <= l + 1 || g.l >= r - 1) return;   // not underneath
+    const d = Math.abs(g.t - b);
+    if (d < 14 * s && (!best || d < best.d)) best = { d, t: g.t };
+  });
+  if (best) pos.y = best.t - f[2] * w;
+}
+
+// Front view: a piece higher up covers the studs of the one below it, and of two pieces side by side
+// the right one covers the left one's side face. Forms stay underneath, stickers and notes on top.
+function zOf(item, pos) {
+  if (item.kind === "form") return pos.z;
+  if (!item.face) return 1000000 + pos.z;
+  const f = faceOf(item, pos), s = state.scale;
+  return 1000 + Math.round((TABLE.h * s - f.b) / s) * 1000 + Math.round(f.l / s);
 }
 
 function layoutBoard() {
   const s = state.scale;                      // px per mm of the printed pieces
-  if (state.phone) {
-    board.style.width = SHEET.w + "px";
-    board.style.height = SHEET.h + "px";
-  } else {                                    // the sheet fills the window
-    board.style.width = wrap.clientWidth - 48 + "px";
-    board.style.height = wrap.clientHeight - 48 + "px";
-    state.zoom = 1;
-    state.pan = { x: 24, y: 24 };
-  }
+  board.style.width = TABLE.w * s + "px";
+  board.style.height = TABLE.h * s + "px";
   applyView();
-  state.placed.forEach((pos, id) => {         // positions in px on the sheet
+  state.placed.forEach((pos, id) => {         // positions in px on the table
     const el = pieces.get(id), item = ITEMS.find(i => i.id === id);
     el.style.left = pos.x + "px";
     el.style.top = pos.y + "px";
-    el.style.zIndex = item.kind === "form" ? pos.z : 100000 + pos.z;   // forms stay underneath
-    const k = pos.k || 1;                     // the piece's own size, set with its resize handle
+    el.style.zIndex = zOf(item, pos);
+    const k = item.face ? 1 : pos.k || 1;     // the piece's own size, set with its resize handle
     if (item.kind === "note") el.style.fontSize = NOTE_MM * s * k + "px";
     else { el.style.width = item.w * s * k + "px"; sizeInk(el, item, item.w * s * k); }
   });
@@ -419,6 +466,7 @@ function placeInView(item) {                  // tap in the tray: put the piece 
   const n = state.placed.size % 5;           // a small step, so pieces don't land exactly on top of each other
   pos.x = c.x - el.offsetWidth / 2 + n * 14;
   pos.y = c.y - el.offsetHeight / 2 + n * 14;
+  snap(item, pos);
   layoutBoard();
   select(el);
   renderTray();
@@ -426,9 +474,19 @@ function placeInView(item) {                  // tap in the tray: put the piece 
 }
 
 const openTray = () => { document.body.classList.add("drawer"); renderTray(); };
+
+function showBlocks(plate) {                  // the tray switches to the building blocks of this archetype
+  const block = ITEMS.find(i => i.kind === "block" && i.aid === plate.aid);
+  if (!block) return;
+  state.view = viewOf(block);
+  $("#view").value = state.view;
+  renderTray();
+  if (state.phone) openTray();
+}
 const closeTray = () => document.body.classList.remove("drawer");
 
 function remove(item) {
+  if (item.fixed) return;
   const el = pieces.get(item.id);
   state.placed.delete(item.id);
   if (state.selected === el) select(null);
@@ -485,6 +543,7 @@ function startResize(e, el, item) {
 
 function startDrag(e, el, item) {
   if (e.button !== 0 || el.isContentEditable) return;
+  if (item.fixed) { select(el); return; }
   if (e.pointerType === "touch" && !state.placed.has(item.id)) return;   // in the tray a finger scrolls; a tap places
   e.preventDefault();
   if (document.activeElement && document.activeElement.isContentEditable) document.activeElement.blur();
@@ -496,7 +555,8 @@ function startDrag(e, el, item) {
     board.appendChild(el);
     renderTray();
   }
-  const pos = state.placed.get(item.id), start = { x: pos.x, y: pos.y };
+  const pos = state.placed.get(item.id), start = { x: pos.x, y: pos.y }, wasPlaced = el.parentNode === board;
+  const down = { x: e.clientX, y: e.clientY };
   pos.z = ++state.z;
   select(el);
   el.classList.add("dragging");
@@ -506,6 +566,7 @@ function startDrag(e, el, item) {
     const w = el.offsetWidth || item.w * s, h = el.offsetHeight || w * 0.6;
     pos.x = Math.min(Math.max(p.x - grab.x * w, -w / 2), board.offsetWidth - w / 2);
     pos.y = Math.min(Math.max(p.y - grab.y * h, -h / 2), board.offsetHeight - h / 2);
+    snap(item, pos);
     layoutBoard();
   };
   const end = () => {
@@ -518,6 +579,11 @@ function startDrag(e, el, item) {
     end();
     const t = $("#side").getBoundingClientRect();
     if (ev.clientX < t.right && ev.clientX >= t.left) remove(item);   // dropped back on the tray
+    else if (wasPlaced && item.kind === "plate" && Math.hypot(ev.clientX - down.x, ev.clientY - down.y) < 6) {
+      Object.assign(pos, start);              // a click, not a move: show the archetype's building blocks
+      layoutBoard();
+      showBlocks(item);
+    }
   };
   state.cancelDrag = () => { end(); Object.assign(pos, start); layoutBoard(); };   // a second finger: pinch instead
   el.addEventListener("pointermove", move);
@@ -554,16 +620,55 @@ async function write(el, item) {
   if (values) values.forEach((v, i) => inks[i].textContent = v);
 }
 
-const resize = d => { state.scale = Math.min(6, Math.max(1.5, state.scale + d)); layoutBoard(); };
-$("#smaller").onclick = () => resize(-0.5);
-$("#bigger").onclick = () => resize(0.5);
-$("#reset").onclick = async () => {
-  if (!await ask({ message: "Put every piece back on the tray and delete the text notes?", ok: "Clear sheet" })) return;
+const zoomBy = f => { const r = wrap.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, f); };
+$("#zoomOut").onclick = () => zoomBy(1 / 1.25);
+$("#zoomIn").onclick = () => zoomBy(1.25);
+
+function placeBase() {                        // the baseplate lies along the bottom of the table
+  const s = state.scale, base = ITEMS[0], el = pieces.get(base.id);
+  el.style.width = base.w * s + "px";
+  board.appendChild(el);
+  state.placed.set(base.id, { x: (TABLE.w - base.w) / 2 * s, y: (TABLE.h - 30) * s - el.offsetHeight, z: 0 });
+}
+
+function clearTable() {
   ITEMS.filter(i => i.kind === "note").forEach(remove);
   state.placed.clear();
+  board.querySelectorAll(".piece").forEach(el => el.remove());   // back to the tray: renderTray adds them again
   select(null);
   pieces.forEach(el => el.querySelectorAll(".ink").forEach(t => t.textContent = ""));
+  layoutBoard();
+  placeBase();
   renderTray(); layoutBoard();
+}
+$("#reset").onclick = async () => {
+  if (!await ask({ message: "Put every piece back on the tray and delete the text notes?", ok: "Clear table" })) return;
+  clearTable();
+};
+
+// The answer key, built on the baseplate: each piece of EXAMPLE takes a matching piece from the tray.
+$("#example").onclick = async () => {
+  if (state.placed.size > 1 && !await ask({ message: "Replace what is on the table with the worked example?",
+                                            ok: "Show example" })) return;
+  clearTable();
+  const s = state.scale, base = state.placed.get("base"), used = new Set(["base"]);
+  EXAMPLE.forEach(ex => {
+    const kind = ex.kind === "heading" ? "strip" : ex.kind;
+    const same = i => ex.kind === "sticker" ? i.sticker === ex.sticker && (i.label || null) === ex.label
+                                            : i.aid === ex.aid && (!ex.stem || i.stem === ex.stem);
+    const item = ex.kind === "baseplate" ? ITEMS[0] : ITEMS.find(i => !used.has(i.id) && i.tab && i.kind === kind && same(i));
+    if (!item) return;
+    used.add(item.id);
+    const el = pieces.get(item.id);
+    const pad = ex.kind === "sticker" ? 0.5 : 0;   // sticker pieces have a 0.5 mm margin around the sticker
+    state.placed.set(item.id, { x: base.x + (ex.x - pad) * s, y: base.y + (ex.y - pad) * s, z: ++state.z });
+    board.appendChild(el);
+    Object.entries(ex.ink || {}).forEach(([key, text]) => {
+      const t = el.querySelector(`.ink[data-key="${key}"]`);
+      if (t) t.textContent = text;
+    });
+  });
+  renderTray(); layoutBoard(); closeTray(); fit();
 };
 $("#addText").onclick = addNote;
 $("#openTray").onclick = openTray;
@@ -591,7 +696,31 @@ $("#writeBtn").onclick = () => {
   if (item) item.kind === "note" ? editNote(el) : write(el, item);
 };
 
-// Phones: one finger on the empty sheet pans, two fingers pinch-zoom around the point between them.
+// Mouse: drag the empty table to pan; the wheel zooms (a trackpad's two-finger scroll pans, pinch zooms).
+wrap.addEventListener("pointerdown", e => {
+  if (e.pointerType === "touch" || e.button !== 0 || (e.target !== board && e.target !== wrap)) return;
+  const start = { x: e.clientX, y: e.clientY, pan: { ...state.pan } };
+  wrap.setPointerCapture(e.pointerId);
+  wrap.classList.add("panning");
+  const move = ev => {
+    state.pan = { x: start.pan.x + ev.clientX - start.x, y: start.pan.y + ev.clientY - start.y };
+    applyView();
+  };
+  wrap.addEventListener("pointermove", move);
+  wrap.addEventListener("pointerup", () => {
+    wrap.removeEventListener("pointermove", move);
+    wrap.classList.remove("panning");
+  }, { once: true });
+});
+wrap.addEventListener("wheel", e => {
+  if (e.target.closest("#tools")) return;
+  e.preventDefault();
+  const mouseWheel = e.deltaMode !== 0 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 50);
+  if (e.ctrlKey || mouseWheel) zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)));
+  else { state.pan = { x: state.pan.x - e.deltaX, y: state.pan.y - e.deltaY }; applyView(); }
+}, { passive: false });
+
+// Touch: one finger on the empty table pans, two fingers pinch-zoom around the point between them.
 // One finger on a piece drags it; as soon as a second finger touches (anywhere), that drag is undone
 // and both fingers zoom. The listeners run in the capture phase, before the pieces' own.
 const touches = new Map();
@@ -601,7 +730,7 @@ const restartGesture = () => {
                              pan: { ...state.pan } } : null;
 };
 wrap.addEventListener("pointerdown", e => {
-  if (!state.phone || e.pointerType !== "touch") return;
+  if (e.pointerType !== "touch") return;
   if (document.body.classList.contains("drawer")) { closeTray(); e.stopPropagation(); return; }
   if (e.target.closest("#tools")) return;
   touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -625,7 +754,7 @@ wrap.addEventListener("pointermove", e => {
     const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) || 1;
     const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
     const r = wrap.getBoundingClientRect(), m0 = mid(g.pts[0], g.pts[1]), m = mid(p[0], p[1]);
-    const z = Math.min(3, Math.max(0.15, g.zoom * dist(p[0], p[1]) / dist(g.pts[0], g.pts[1])));
+    const z = Math.min(3, Math.max(0.08, g.zoom * dist(p[0], p[1]) / dist(g.pts[0], g.pts[1])));
     const sx = (m0.x - r.left - g.pan.x) / g.zoom, sy = (m0.y - r.top - g.pan.y) / g.zoom;   // sheet point under the fingers
     state.zoom = z;
     state.pan = { x: m.x - r.left - sx * z, y: m.y - r.top - sy * z };
@@ -643,6 +772,7 @@ board.addEventListener("pointerdown", e => { if (e.target === board) select(null
 document.addEventListener("keydown", e => {
   const el = state.selected;
   if (!el || el.isContentEditable || $("#ask").open || !["Delete", "Backspace"].includes(e.key)) return;
+  if (el.classList.contains("fixed")) return;
   e.preventDefault();
   remove(ITEMS.find(i => i.id === el.dataset.id));
 });
@@ -652,11 +782,11 @@ window.addEventListener("resize", () => {
   state.phone = matchMedia(PHONE).matches;
   if (!state.phone) closeTray();
   renderTray(); layoutBoard();
-  if (state.phone && !was) fit();
+  if (state.phone !== was) fit();
 });
 state.phone = matchMedia(PHONE).matches;
-renderViews(); renderTray(); layoutBoard();
-if (state.phone) fit();
+renderViews(); renderTray(); layoutBoard(); placeBase(); layoutBoard();
+fit();
 </script>
 </body>
 </html>

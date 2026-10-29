@@ -85,12 +85,6 @@
     "sourceId" : "practica-596",
     "lastModified" : "2026-09-14T15:29:19.713Z"
   }, {
-    "path" : "local/openEHR-EHR-OBSERVATION.falls_risk_assessment.v0.adl",
-    "type" : "archetype",
-    "id" : "openEHR-EHR-OBSERVATION.falls_risk_assessment.v0",
-    "sourceId" : "practica-596",
-    "lastModified" : "2026-08-13T13:59:54.615Z"
-  }, {
     "path" : "local/openEHR-EHR-EVALUATION.adverse_reaction_risk.v2.adl",
     "type" : "archetype",
     "id" : "openEHR-EHR-EVALUATION.adverse_reaction_risk.v2",
@@ -114,17 +108,5 @@
     "id" : "openEHR-EHR-OBSERVATION.clinical_frailty_scale.v1",
     "sourceId" : "practica-596",
     "lastModified" : "2026-09-07T15:03:38.585Z"
-  }, {
-    "path" : "local/openEHR-EHR-CLUSTER.falls_risk_assessment_extension.v0.adl",
-    "type" : "archetype",
-    "id" : "openEHR-EHR-CLUSTER.falls_risk_assessment_extension.v0",
-    "sourceId" : "practica-596",
-    "lastModified" : "2026-08-13T13:59:54.612Z"
-  }, {
-    "path" : "local/openEHR-EHR-CLUSTER.therapeutic_direction.v1.adl",
-    "type" : "archetype",
-    "id" : "openEHR-EHR-CLUSTER.therapeutic_direction.v1",
-    "sourceId" : "practica-596",
-    "lastModified" : "2026-08-13T14:01:40.513Z"
   } ]
 }
