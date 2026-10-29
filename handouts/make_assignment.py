@@ -118,11 +118,11 @@ CONTENT = [
         "make it mandatory.",
     ]),
 
-    ("h3", "1.4 Directions", None),
-    ("p", "The form's 'Directions' column holds the prescriber's directions: how much, and how often. "
-          "There is no element called Dose or Frequency."),
+    ("h3", "1.4 Medication directions", None),
+    ("p", "In the **medication** list on the form, the 'Directions' column holds the prescriber's directions "
+          "for each medication: how much, and how often. There is no element called Dose or Frequency."),
     ("bullets", [
-        "Look at the Medication order elements about directions and read their descriptions. Which one "
+        "Look at the **Medication order** elements about directions and read their descriptions. Which one "
         "covers the whole of the directions?",
         "Keep that element and rename it to match the form.",
     ]),
@@ -421,7 +421,7 @@ ANSWERS = [
                           "reaction event in the slot **Reaction event summary**. Keep **Manifestation**, renamed "
                           "**Reaction**, **1..1**. The cluster itself stays 0..1, so an allergy without a "
                           "recorded reaction is still possible."),
-        ("1.4 Directions", "**Overall directions description**, renamed **Directions**. Tempting but "
+        ("1.4 Medication directions", "Medication order: **Overall directions description**, renamed **Directions**. Tempting but "
                               "wrong: Specific directions description (one part of the directions), Parsable "
                               "directions (a computable syntax for systems)."),
         ("1.5 Frailty", "Clinical Frailty Scale: keep **Assessment** (an ordinal, 1 Very Fit to 9 Terminally Ill)."),
