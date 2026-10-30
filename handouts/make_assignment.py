@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Participant assignment for the building block workshop, as A4 pages: out/assignment.pdf.
 
-Adapted from the EHRCON26 practical modelling tasks
+Adapted from the practical modelling tasks by Ian McNicoll (freshEHR), as extended by the Hanze for EHRCON26
 (https://freshehrteam.github.io/openehr-workshop/exercises/) for paper bricks and stickers.
 Also used by make_print.py, which puts these pages in the print pack.
 
@@ -39,7 +39,8 @@ CONTENT = [
           "block by block. Archetypes are deliberately broad so they can be reused everywhere; "
           "template design means narrowing each archetype down to what this specific form needs, "
           "and pulling in extra archetypes for what is still missing."),
-    ("p", "Based on the openEHR practical modelling tasks by freshEHR and the Hanze. If you want to "
+    ("p", "Based on the openEHR practical modelling tasks by Ian McNicoll (freshEHR), with additions by the Hanze "
+          "for EHRCON26. If you want to "
           "explore further, the online version of the workshop is at "
           "**freshehrteam.github.io/openehr-workshop**"),
 
