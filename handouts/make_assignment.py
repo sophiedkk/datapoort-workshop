@@ -118,8 +118,8 @@ CONTENT = [
     ("bullets", [
         "Keep only the element that says what the patient is allergic to, and rename it to match the form.",
         "The reaction is a CLUSTER. Find the building block on the allergy archetype that it slots into "
-        "(the CLUSTER slot), and put the reaction plate on top of that block. The plate is wider than the "
-        "block: let it hang over the side where there is room.",
+        "(the CLUSTER slot: its studs have the colour of the reaction plate), and put the reaction plate on top "
+        "of that block. The plate is wider than the block: let it hang over the side where there is room.",
         "Keep only the element that describes how the reaction showed itself. Rename it to match the form, and "
         "make it mandatory.",
     ]),
@@ -142,7 +142,7 @@ CONTENT = [
     ("p", "The nurses want to record **additional information on admission** (paper form below). CKM has no "
           "suitable archetype, so you make a new **ADMIN_ENTRY**: admission logistics, not a clinical finding."),
     ("bullets", [
-        "Ask your facilitator for the black plate and **write-on building blocks**: archetype **Inpatient "
+        "Get the black plate and the **write-on building blocks** from the CKM desk: archetype **Inpatient "
         "admission details**.",
         "Make one building block per question on the form: write its name and values, tick the data type, "
         "and fill in the cardinality.",

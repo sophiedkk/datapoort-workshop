@@ -335,8 +335,12 @@ def brick_svg(color, archetype_label, f, terms, opts, header_only=False):
     a(f'<rect x="{FX}" y="{FY}" width="{FW}" height="{FH}" fill="{color}" stroke="{edge}" '
       f'stroke-width="4" stroke-linejoin="round"/>')
 
-    # --- studs: 2 rows x 4 on the top face, back row first so front row overlaps it
-    edge_s = edge
+    # --- studs: 2 rows x 4 on the top face, back row first so front row overlaps it. A slot block gets
+    # studs in the colour of the CLUSTER that goes on it.
+    if f.slot_colors:
+        top, side, edge_s = shade(f.slot_colors[0], 1.25), shade(f.slot_colors[0], 0.72), shade(f.slot_colors[0], 0.55)
+    else:
+        edge_s = edge
     rx, ry, sh = STUD_RX, STUD_RY, STUD_H
     for row in (1, 0):
         t = 0.27 + 0.5 * row                # position across the depth of the top face
@@ -394,27 +398,29 @@ def brick_svg(color, archetype_label, f, terms, opts, header_only=False):
 
     hint = value_hint(f, terms)
     hint_top = chips_y - 30
+    hs, hstep = 31, 39                                  # values / units line
     if hint:
-        hint_lines = wrap(hint, 29, inner_w - shrink, weight=600)
+        hint_lines = wrap(hint, hs, inner_w - shrink, weight=600)
         if len(hint_lines) > 2:
-            hint_lines = hint_lines[:1] + [ellipsize(" ".join(hint_lines[1:]), 29, inner_w - shrink)]
-        hint_top = chips_y - 24 - 38 * len(hint_lines)
+            hint_lines = hint_lines[:1] + [ellipsize(" ".join(hint_lines[1:]), hs, inner_w - shrink)]
+        hint_top = chips_y - 24 - hstep * len(hint_lines)
         for i, line in enumerate(hint_lines):
-            a(f'<text x="{SX + pad}" y="{hint_top + 38 * (i + 1):.0f}" font-size="29" font-weight="600" '
+            a(f'<text x="{SX + pad}" y="{hint_top + hstep * (i + 1):.0f}" font-size="{hs}" font-weight="600" '
               f'fill="#333">{esc(line)}</text>')
 
     description = first_sentence(terms.get(f.code, ("", ""))[1])
-    keep = int((hint_top - 6 - y - 4) // 46)
+    ds, dstep = 46, 53                                  # the description, as large as fits
+    keep = int((hint_top - y - 4) // dstep)
     if description and keep > 0:
         y += 4
         # lines that reach down next to the icon are kept narrower
-        widths = [inner_w - (shrink if y + 46 * (i + 1) > icon_top else 0) for i in range(keep)]
-        desc_lines = wrap_widths(description, 40, widths, weight=600)
+        widths = [inner_w - (shrink if y + dstep * (i + 1) > icon_top else 0) for i in range(keep)]
+        desc_lines = wrap_widths(description, ds, widths, weight=600)
         if len(desc_lines) > keep:
-            desc_lines = desc_lines[:keep - 1] + [ellipsize(" ".join(desc_lines[keep - 1:]), 40, widths[-1])]
+            desc_lines = desc_lines[:keep - 1] + [ellipsize(" ".join(desc_lines[keep - 1:]), ds, widths[-1])]
         for line in desc_lines:
-            y += 46
-            a(f'<text x="{SX + pad}" y="{y:.0f}" font-size="40" font-weight="600" fill="#333">{esc(line)}</text>')
+            y += dstep
+            a(f'<text x="{SX + pad}" y="{y:.0f}" font-size="{ds}" font-weight="600" fill="#1B1B1B">{esc(line)}</text>')
 
     # footer chips: data type, cardinality, at-code
     x = SX + pad + 3                 # outer edge of the stroke lines up with the glyphs of the text above
@@ -478,10 +484,8 @@ def plate_svg(color, archetype_label, purpose, plugs_into=(), shown=None, bindin
          f'<polygon points="{fx + fw},{fy} {fx + fw + dx},{fy + dy} {fx + fw + dx},{fy + fh + dy} {fx + fw},{fy + fh}" '
          f'fill="{side}" stroke="{edge}" stroke-width="4" stroke-linejoin="round"/>',
          f'<rect x="{fx}" y="{fy}" width="{fw}" height="{fh}" fill="{color}" stroke="{edge}" stroke-width="4"/>']
-    # the same studs as a block, on the same grid (8 studs: two blocks), so pieces line up. A CLUSTER
-    # plate gets studs in the colour of the archetype it slots into.
-    stud = plugs_into[0][2] if plugs_into else color
-    s_top, s_side, s_edge = shade(stud, 1.25), shade(stud, 0.72), shade(stud, 0.55)
+    # the same studs as a block, on the same grid (8 studs: two blocks), so pieces line up
+    s_top, s_side, s_edge = top, side, edge
     rx, ry, sh = STUD_RX, STUD_RY, STUD_H
     for t in (0.77, 0.27):
         for i in range(8):

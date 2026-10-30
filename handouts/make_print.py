@@ -2,7 +2,7 @@
 """Combine the workshop materials into vector PDFs:
 out/participant_handouts.pdf (everything on the tables),
 out/facilitator_handouts.pdf (guide with decoys, answers),
-out/ckm_desk.pdf (the CKM pile, printed once per group) and
+out/ckm_desk.pdf (the CKM pile and the write-on blocks, printed once per group) and
 out/baseplates_A0.pdf (the Encounter baseplates for all groups, on one A0 sheet).
 
 Run make_bricks.py (with --blank for inpatient admission details) first; this script
@@ -167,7 +167,7 @@ def cover_page(documents, colors, names, decoys):
                  f"{BASEPLATES_PDF.name}: once, on A0 at 100%. Cut out the {GROUPS} Encounter baseplates, "
                  "one per group.",
                  "Per group: a table at least 1.2 m wide. The template is built up from the baseplate.",
-                 f"{CKM_PDF.name}: once per group, for the CKM desk (Clinical Frailty Scale, exercises 0 and 1).",
+                 f"{CKM_PDF.name}: once per group, for the CKM desk: the CKM pile and the exercise 2 write-on blocks.",
                  "Hand out the archetype plates first (exercise 0), the building block pages after exercise 0."]:
         y += 5.5
         a(f'<text x="{x + 2}" y="{y}" font-size="3.2" font-weight="600" fill="#333">• {esc(line)}</text>')
@@ -248,14 +248,11 @@ def main():
         ("Building blocks", "One sheet per archetype: hand out after exercise 0",
          [pg for aid in table for pg in sheets(aid, names, colors, with_plate=False)]),
         ("Template override stickers", "Cardinality and rename stickers: yellow means changed in the template",
-         [sticker_page(1)]),
+         [sticker_page()]),
     ]
     facilitator = [
         ("Answer key", "What each group should end up with, per exercise", answer_key_pages()),
         ("Worked example", "The answer built on the baseplate (landscape)", [example_page()]),
-        ("Write-on building blocks", "Black plate and blank building blocks: hand out when a group starts exercise 2",
-         sheet_pages([plate(EXERCISE_3)] + [blank] * 6, (names[EXERCISE_3], "Admin Entry (write-on)"),
-                     colors[EXERCISE_3]["hex"])),
         ("Exercise 2 answer building blocks", "The filled-in Inpatient admission details",
          sheets(EXERCISE_3, names, colors, " (answers)")),
     ]
@@ -263,6 +260,8 @@ def main():
     ckm = [pg for aid in CKM_PILE
            for pg in sheet_pages([plate(aid)] + bricks(aid), (names[aid], "Observation (CKM pile)"),
                                  colors[aid]["hex"])]
+    ckm += sheet_pages([plate(EXERCISE_3)] + [blank] * 6, (names[EXERCISE_3], "Admin Entry (write-on)"),
+                       colors[EXERCISE_3]["hex"])     # exercise 2: hand out when a group starts it
 
     def contents(plan, first_page):
         rows, n = [], first_page
@@ -287,7 +286,7 @@ def main():
     documents = [
         (PARTICIPANT_PDF.name, f"Assignment (p. 1–{a_pages}): one per participant, double-sided. "
                                f"The rest (p. {a_pages + 1}–{p_total}): once per group.", p_rows),
-        (FACILITATOR_PDF.name, "Guide, answer key and answer blocks once; write-on blocks once per group.", f_rows),
+        (FACILITATOR_PDF.name, "Once: guide, answer key, worked example and the exercise 2 answers.", f_rows),
     ]
 
     render(paginate(participant, 1, p_total), PARTICIPANT_PDF)

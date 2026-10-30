@@ -6,8 +6,7 @@ Yellow = a template constraint, stuck on top of what the archetype allows:
   - rename stickers cover the field name or an archetype plate's name (exercise renames + blank write-on ones)
 
 Usage:
-    uv run make_stickers.py              # out/stickers.pdf, one page per group
-    uv run make_stickers.py --groups 6
+    uv run make_stickers.py              # out/stickers.pdf: one page, the same for every group
 """
 
 import argparse
@@ -79,12 +78,12 @@ def heading(x, y, text, sub):
             f'<text x="{x}" y="{y + 4.5}" font-size="2.8" font-weight="600" fill="#666">{html.escape(sub)}</text>']
 
 
-def page_svg(group):
+def page_svg():
     p = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{A4[0]}mm" height="{A4[1]}mm" '
          f'viewBox="0 0 {A4[0]} {A4[1]}" font-family="{FONT_FAMILY}, sans-serif">',
          '<rect width="100%" height="100%" fill="#fff"/>']
     x0, y = MARGIN, MARGIN + 4
-    p += heading(x0, y, f"Template override stickers for group {group}",
+    p += heading(x0, y, "Template override stickers",
                  "Yellow = changed in the template. Templates can only narrow what the archetype allows.")
     y += 14
     p += heading(x0, y, "Cardinality", "Stick over the cardinality chip of a building block. Archetype cardinality goes "
@@ -113,21 +112,16 @@ def page_svg(group):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--groups", type=int, default=1, help="number of participant groups (one page each)")
-    opts = ap.parse_args()
+    ap.parse_args()
 
     OUT_DIR.mkdir(exist_ok=True)
-    pages = []
-    for g in range(1, opts.groups + 1):
-        page = OUT_DIR / f".stickers-{g}.svg"
-        page.write_text(page_svg(g), encoding="utf-8")
-        pages.append(page)
+    page = OUT_DIR / ".stickers.svg"
+    page.write_text(page_svg(), encoding="utf-8")
     pdf = OUT_DIR / "stickers.pdf"
-    subprocess.run(["magick", "-density", "300", *map(str, pages), "-units", "PixelsPerInch",
-                    "-density", "300", str(pdf)], check=True)
-    for page in pages:
-        page.unlink()
-    print(f"-> {pdf} ({opts.groups} page(s))")
+    subprocess.run(["magick", "-density", "300", str(page), "-units", "PixelsPerInch", "-density", "300", str(pdf)],
+                   check=True)
+    page.unlink()
+    print(f"-> {pdf}")
 
 
 if __name__ == "__main__":

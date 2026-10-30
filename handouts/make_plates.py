@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Structure pieces for the template: the Encounter baseplates (COMPOSITION), five per A0 sheet
+"""Structure pieces for the template: the Encounter baseplates (COMPOSITION), eight per A0 sheet
 (out/baseplates_A0.pdf), and write-on Ad hoc heading plates (SECTION) on one A4 page (out/plates.pdf).
 Also the worked example: where every piece of the answer goes on the baseplate (make_print.py and
 make_demo.py draw it).
@@ -32,7 +32,7 @@ HEADING_STUDS, HEADING_H = 8, PLATE_FH * UNIT   # as high as an archetype plate
 GAP_STUDS = 1                           # between two parts of the form and at both ends: room for the paper edges
 BASE_STUDS, BASE_H, BASE_K = 6 * 8 + 7 * GAP_STUDS, 60, 2   # BASE_K: text size, relative to a heading
 A0 = (1189, 841)                        # landscape
-GROUPS = 5
+GROUPS = 8                              # baseplates on the A0 sheet: one per group
 WRITE_INK = "#1d3f8f"                   # what participants write, in the demo and the worked example
 
 # Pieces in front view, in mm: printed width, and the front face (left, top, bottom, width) inside it.

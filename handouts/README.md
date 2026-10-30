@@ -76,11 +76,11 @@ overrides it: the form has one *Directions (dose/frequency)* field, so Medicatio
 Overall directions description instead of the template's Dose and Frequency clones.
 
 COMPOSITION and SECTION archetypes are skipped (they're the baseplate and the heading plates, not building blocks).
-Setup (uv, ImageMagick, rsvg-convert, Lexend): see `../README.md`.
+Setup (uv, ImageMagick, rsvg-convert, Lexend): see *Building without a container* below.
 
 ## Override stickers
 
-`uv run make_stickers.py --groups N` makes `out/stickers.pdf` (one A4 page per group,
+`uv run make_stickers.py` makes `out/stickers.pdf` (one A4 page, the same for every group,
 best on label paper). Yellow means "changed in the template":
 
 - cardinality stickers (28 × 9 mm) cover a building block's cardinality chip; templates can only
@@ -101,11 +101,11 @@ the decoys and `--blank` first; it reads the building block SVGs from `out/`.
   top and bottom of the page) and the override stickers.
 - `out/facilitator_handouts.pdf`: a guide page (print counts, contents of both files, colour
   legend with the decoys marked), the answer key, the worked example (the answer built on the
-  baseplate, from `example()` in `make_plates.py`), the write-on building blocks (one per group,
-  handed out at exercise 2) and the filled-in Inpatient admission details.
-- `out/ckm_desk.pdf`: the CKM pile (Clinical Frailty Scale plate and building block), printed
-  once per group for the CKM desk, so the facilitator handouts are printed only once.
-- `out/baseplates_A0.pdf`: one A0 sheet (landscape) with the five Encounter baseplates, one per
+  baseplate, from `example()` in `make_plates.py`) and the filled-in Inpatient admission details.
+- `out/ckm_desk.pdf`: what the CKM desk hands out, printed once per group: the CKM pile (Clinical
+  Frailty Scale plate and building block) and the black plate and write-on building blocks for
+  exercise 2. So the facilitator handouts are printed only once.
+- `out/baseplates_A0.pdf`: one A0 sheet (landscape) with eight Encounter baseplates, one per
   group, each 55 studs (about 1.12 m) in one piece.
 
 ## Assignment
@@ -126,17 +126,17 @@ side of an A0 sheet.
 renamed by participants: the COMPLETE template uses Allergies, Medications and Vital signs), also
 part of the participant print pack, and `out/baseplates_A0.pdf`: the green Encounter baseplates
 (COMPOSITION, write-in template name, the building rules and what an Encounter is and records by
-itself, from `BASE_INFO`), five on one A0 sheet. `example()` places the answer on the
+itself, from `BASE_INFO`), eight on one A0 sheet. `example()` places the answer on the
 baseplate, for the facilitator PDF and the demo page.
 
 ## Archetype plates and building blocks
 
 `make_bricks.py` also writes `out/<archetype-id>/plate.svg`: a broad plate (two building
 blocks wide) per archetype with its name in a large header (sized to stay under a rename
-sticker), its purpose and a cardinality write-in. CLUSTER plates are dashed, have studs in the colour of the archetype they slot into,
-and say which building block that is (worked out from the slot `include` patterns of the other
-archetypes). Slot building blocks are normal blocks with a "CLUSTER slot" chip and a small
-instruction picture: the CLUSTER coming down onto the element and standing on it.
+sticker), its purpose and a cardinality write-in. CLUSTER plates are dashed and say which building block they slot into (worked out from the slot `include` patterns of the other
+archetypes). Slot building blocks are normal blocks with a "CLUSTER slot" chip, studs in the
+colour of the CLUSTER that goes on them and a small instruction picture: the CLUSTER coming down
+onto the element and standing on it.
 
 Exercise order in the assignment: 0 choose the archetypes (structure + plates), 1 choose the
 elements (building blocks, renames, cardinality), 2 author Inpatient admission details.
