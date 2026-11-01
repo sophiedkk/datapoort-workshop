@@ -126,28 +126,37 @@ PAGE = """<!doctype html>
 <title>openEHR building blocks</title>
 <style>
 @font-face { font-family: Lexend; src: url("/*FONT*/") format("truetype"); font-weight: 100 900; }
-:root { --tray: 340px; --ink: #1B1B1B; --muted: #6b6b6b; --line: #d9d6cf; --bg: #f3f1ec; --paper: #fff; }
+:root { --tray: 330px; --ink: #1B1B1B; --muted: #6b6b6b; --line: #d9d6cf; --bg: #f3f1ec; --paper: #fff; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { font-family: Lexend, sans-serif; color: var(--ink); background: var(--bg); display: grid;
-       grid-template-columns: var(--tray) 1fr; grid-template-rows: 100%; height: 100vh; height: 100dvh;
+       grid-template-columns: var(--tray) 1fr; grid-template-rows: auto 1fr; height: 100vh; height: 100dvh;
        overflow: hidden; }
-#side { display: flex; flex-direction: column; min-height: 0; height: 100%; border-right: 1px solid var(--line);
-        background: var(--paper); }
+body.collapsed { grid-template-columns: 0 1fr; }
+/* the top bar: Pieces toggle and title on the left, the table's tools on the right */
+#bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 8px 16px;
+       border-bottom: 1px solid var(--line); background: var(--paper); }
+#bar h1 { margin: 0; font-size: 19px; font-weight: 800; line-height: 1.2; white-space: nowrap; }
+#bar .title { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+#bar .sub { font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+#tools { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+/* the side panel: Show menu, then the pieces; the Pieces button folds it away */
+#side { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden;
+        border-right: 1px solid var(--line); background: var(--paper); }
+body.collapsed #side { border-right: 0; }
 .show { position: relative; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .show h1 { margin: 2px 0 2px; font-size: 20px; font-weight: 800; line-height: 1.2; }
 .show .sub { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .show label { display: block; margin-bottom: 6px; }
 .show select { width: 100%; font-size: 15px; padding: 8px 10px; }
-#tools { position: absolute; bottom: 36px; right: 40px; z-index: 300000; display: flex; gap: 6px; align-items: center;
-         padding: 6px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
-         box-shadow: 0 4px 14px rgba(0,0,0,.10); }
 #tools .size { display: flex; align-items: center; gap: 2px; padding-left: 8px; font-size: 14px; font-weight: 600;
                color: var(--muted); }
 #tools .size button { width: 34px; padding: 6px 0; font-size: 16px; }
 #tools .sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 4px; }
 button, select { font: inherit; font-size: 14px; font-weight: 600; border: 1px solid var(--line);
                  background: var(--paper); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--ink); }
+#pieces { gap: 7px; padding: 6px 12px; }
+#pieces[aria-expanded="true"] { background: var(--bg); }
 button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
 button:disabled { opacity: .4; cursor: default; }
 button.icon { display: inline-flex; align-items: center; justify-content: center; padding: 6px 9px; }
@@ -215,18 +224,24 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
 #ask .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
 /* phones: the tray is a drawer, you pinch-zoom and pan the table, and handles are finger-sized */
 @media (max-width: 700px), (pointer: coarse) and (max-height: 500px) {
-  body { grid-template-columns: 1fr; }
-  #side { position: fixed; left: 0; top: 0; bottom: 0; width: min(340px, 86vw); height: auto; z-index: 400000;
+  body, body.collapsed { grid-template-columns: 1fr; grid-template-rows: 100%; }
+  /* the top bar becomes the floating toolbar at the bottom, the side panel a drawer */
+  #bar { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 300000; justify-content: center; gap: 5px;
+         padding: 6px; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.10); }
+  #bar .title { display: none; }
+  #tools { margin-left: 0; gap: 5px; }
+  #side { position: fixed; left: 0; top: 0; bottom: 0; width: min(340px, 86vw); z-index: 400000; border: 0;
           transform: translateX(-102%); transition: transform .2s ease; box-shadow: 4px 0 24px rgba(0,0,0,.18); }
   body.drawer #side { transform: none; }
   .phone-only { display: inline-block; }
+  h1.phone-only, p.phone-only { display: block; }
   .show .close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; padding: 0; font-size: 22px; }
   .show h1 { padding-right: 48px; }
-  #tools { left: 10px; right: 10px; bottom: 10px; justify-content: center; }
   #tools .size, #tools .sep { display: none; }
-  #tools { gap: 5px; }
-  #tools button { min-height: 44px; padding: 8px 10px; font-size: 15px; }
-  #tools button.icon { min-width: 44px; padding: 0; }
+  #bar button { min-height: 44px; padding: 8px 10px; font-size: 15px; }
+  #bar button.icon { min-width: 44px; padding: 0; }
+  #bar #pieces { padding: 0 16px; }
+  .desk-only { display: none; }
   .del { width: calc(40px * var(--inv)); height: calc(40px * var(--inv)); top: calc(-20px * var(--inv));
          right: calc(-20px * var(--inv)); font-size: calc(22px * var(--inv)); border-width: calc(2px * var(--inv)); }
   .piece.note > .del { right: calc(-46px * var(--inv)); top: calc(-8px * var(--inv)); }
@@ -239,26 +254,17 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
 </style>
 </head>
 <body>
-<aside id="side">
-  <div class="show">
-    <button id="closeTray" class="phone-only close" aria-label="Close">×</button>
-    <h1>openEHR building blocks</h1>
-    <p class="sub">Datapoort workshop demo</p>
-    <label for="view">Show</label>
-    <select id="view"></select>
-    <button id="example" class="wide">Show the worked example</button>
-  </div>
-  <div id="tray" aria-label="Pieces"></div>
-</aside>
-<div id="wrap">
-  <div id="board"></div>
-  <div id="tools" role="toolbar" aria-label="Sheet tools">
-    <button id="openTray" class="phone-only">Pieces</button>
+<header id="bar">
+  <button id="pieces" class="icon" aria-controls="side" aria-expanded="true" title="Show or hide the pieces">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/>
+      <path d="M9 4v16"/></svg>Pieces</button>
+  <div class="title"><h1>openEHR building blocks</h1><div class="sub">Datapoort workshop demo</div></div>
+  <div id="tools" role="toolbar" aria-label="Table tools">
     <div class="size">Zoom <button id="zoomOut" aria-label="Zoom out">−</button>
       <button id="zoomIn" aria-label="Zoom in">+</button></div>
     <div class="sep"></div>
-    <button id="writeBtn" class="phone-only" disabled>Write</button>
-    <button id="addText">Text</button>
+    <button id="addText" class="desk-only">Text</button>
     <button id="fit">Fit</button>
     <button id="reset">Clear</button>
     <button id="full" class="icon" aria-label="Full screen" title="Full screen" hidden>
@@ -268,6 +274,20 @@ button:focus-visible, select:focus-visible { outline: 2px solid #1d3f8f; outline
         <path class="leave" d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/>
       </svg></button>
   </div>
+</header>
+<aside id="side">
+  <div class="show">
+    <button id="closeTray" class="phone-only close" aria-label="Close">×</button>
+    <h1 class="phone-only">openEHR building blocks</h1>
+    <p class="sub phone-only">Datapoort workshop demo</p>
+    <label for="view">Show</label>
+    <select id="view"></select>
+    <button id="example" class="wide">Show the worked example</button>
+  </div>
+  <div id="tray" aria-label="Pieces"></div>
+</aside>
+<div id="wrap">
+  <div id="board"></div>
 </div>
 <dialog id="ask">
   <form method="dialog">
@@ -291,7 +311,8 @@ const VIEWS = [                               // the tray's "Show" menu, in work
   ["Reference", [["Forms", "Paper forms"]]],
 ];
 const state = { view: "Structure", scale: 3.5, placed: new Map(), z: 1, selected: null, notes: 0,
-                zoom: 1, pan: { x: 24, y: 24 }, phone: false };
+                zoom: 1, pan: { x: 24, y: 24 }, phone: false,
+                touchAt: 0, lastTap: null };
 const PHONE = "(max-width: 700px), (pointer: coarse) and (max-height: 500px)";   // same as the CSS
 const NOTE_MM = 7;                            // text note font size, mm on the sheet
 const $ = s => document.querySelector(s);
@@ -328,9 +349,12 @@ function piece(item) {
   el.appendChild(grip);
   el.addEventListener("pointerdown", e => startDrag(e, el, item));
   el.addEventListener("click", () => { if (!state.placed.has(item.id)) placeInView(item); });   // a tap in the tray
-  el.addEventListener("dblclick", () => item.kind === "note" ? editNote(el) : write(el, item));
+  el.addEventListener("dblclick", () => {   // touch has its own double tap, in startDrag
+    if (Date.now() - state.touchAt > 1000) writeOn(el, item);
+  });
   return el;
 }
+const writeOn = (el, item) => item.kind === "note" ? editNote(el) : write(el, item);
 const pieces = new Map(ITEMS.map(i => [i.id, piece(i)]));
 
 function sizeInk(el, item, widthPx) {
@@ -376,7 +400,7 @@ function applyView() {
 
 function fit() {                              // the whole table in view (on a phone: above the toolbar)
   const s = state.scale, w = wrap.clientWidth;
-  const h = wrap.clientHeight - (state.phone ? $("#tools").offsetHeight + 20 : 0);
+  const h = wrap.clientHeight - (state.phone ? $("#bar").offsetHeight + 20 : 0);
   state.zoom = Math.min((w - 20) / (TABLE.w * s), (h - 20) / (TABLE.h * s));
   state.pan = { x: (w - TABLE.w * s * state.zoom) / 2, y: (h - TABLE.h * s * state.zoom) / 2 };
   applyView();
@@ -447,7 +471,6 @@ function select(el) {
   state.selected = el;
   if (el) el.classList.add("selected");
   const item = el && ITEMS.find(i => i.id === el.dataset.id);
-  $("#writeBtn").disabled = !(item && (item.kind === "note" || (item.write || []).length));
 }
 
 // Sheet position (unzoomed px) of a point on the screen.
@@ -473,7 +496,19 @@ function placeInView(item) {                  // tap in the tray: put the piece 
   closeTray();
 }
 
-const openTray = () => { document.body.classList.add("drawer"); renderTray(); };
+// The Pieces button: on a phone it opens the drawer, on a desktop it folds the side panel in or out.
+const sideOpen = () => state.phone ? document.body.classList.contains("drawer")
+                                   : !document.body.classList.contains("collapsed");
+const markPieces = () => $("#pieces").setAttribute("aria-expanded", sideOpen());
+const openTray = () => { document.body.classList.add("drawer"); markPieces(); renderTray(); };
+function setSide(open, refit = true) {
+  const before = wrap.getBoundingClientRect().left;
+  document.body.classList.toggle("collapsed", !open);
+  markPieces();
+  if (open) renderTray();
+  if (refit) fit();
+  else { state.pan.x -= wrap.getBoundingClientRect().left - before; applyView(); }   // the table stays put on screen
+}
 
 function showBlocks(plate) {                  // the tray switches to the building blocks of this archetype
   const block = ITEMS.find(i => i.kind === "block" && i.aid === plate.aid);
@@ -482,8 +517,9 @@ function showBlocks(plate) {                  // the tray switches to the buildi
   $("#view").value = state.view;
   renderTray();
   if (state.phone) openTray();
+  else if (!sideOpen()) setSide(true, false);
 }
-const closeTray = () => document.body.classList.remove("drawer");
+const closeTray = () => { document.body.classList.remove("drawer"); markPieces(); };
 
 function remove(item) {
   if (item.fixed) return;
@@ -543,7 +579,13 @@ function startResize(e, el, item) {
 
 function startDrag(e, el, item) {
   if (e.button !== 0 || el.isContentEditable) return;
-  if (item.fixed) { select(el); return; }
+  if (item.fixed) {                           // the baseplate doesn't move, but a double tap writes on it
+    select(el);
+    const at = { x: e.clientX, y: e.clientY };
+    if (e.pointerType === "touch") el.addEventListener("pointerup", ev => { if (isTap(ev, at)) tapped(ev, el, item); },
+                                                      { once: true });
+    return;
+  }
   if (e.pointerType === "touch" && !state.placed.has(item.id)) return;   // in the tray a finger scrolls; a tap places
   e.preventDefault();
   if (document.activeElement && document.activeElement.isContentEditable) document.activeElement.blur();
@@ -557,6 +599,7 @@ function startDrag(e, el, item) {
   }
   const pos = state.placed.get(item.id), start = { x: pos.x, y: pos.y }, wasPlaced = el.parentNode === board;
   const down = { x: e.clientX, y: e.clientY };
+  if (e.pointerType === "touch") state.touchAt = Date.now();
   pos.z = ++state.z;
   select(el);
   el.classList.add("dragging");
@@ -578,11 +621,13 @@ function startDrag(e, el, item) {
   const up = ev => {
     end();
     const t = $("#side").getBoundingClientRect();
-    if (ev.clientX < t.right && ev.clientX >= t.left) remove(item);   // dropped back on the tray
-    else if (wasPlaced && item.kind === "plate" && Math.hypot(ev.clientX - down.x, ev.clientY - down.y) < 6) {
-      Object.assign(pos, start);              // a click, not a move: show the archetype's building blocks
+    if (ev.clientX >= t.left && ev.clientX < t.right && ev.clientY >= t.top && ev.clientY < t.bottom) {
+      remove(item);                           // dropped back on the tray
+    }
+    else if (wasPlaced && isTap(ev, down)) {
+      Object.assign(pos, start);              // a click, not a move
       layoutBoard();
-      showBlocks(item);
+      tapped(ev, el, item);
     }
   };
   state.cancelDrag = () => { end(); Object.assign(pos, start); layoutBoard(); };   // a second finger: pinch instead
@@ -590,6 +635,29 @@ function startDrag(e, el, item) {
   el.addEventListener("pointerup", up);
   move(e);
 }
+
+// A click or tap on a placed piece: a finger may wander a little more than a mouse.
+const isTap = (ev, down) => Math.hypot(ev.clientX - down.x, ev.clientY - down.y) < (ev.pointerType === "touch" ? 14 : 6);
+const DOUBLE_TAP = 500;                       // ms between the two taps of a double tap
+function tapped(ev, el, item) {
+  const last = state.lastTap, now = Date.now();
+  if (ev.pointerType === "touch" && last && last.el === el && now - last.t < DOUBLE_TAP) {
+    clearTimeout(last.timer);                 // a double tap writes on the piece (a mouse has dblclick)
+    state.lastTap = null;
+    writeOn(el, item);
+    return;
+  }                                           // a plate shows its building blocks (on touch: unless a second tap follows)
+  const blocks = item.kind === "plate" ? () => showBlocks(item) : null;
+  if (ev.pointerType !== "touch") { if (blocks) blocks(); }
+  else state.lastTap = { el, t: now, timer: blocks ? setTimeout(blocks, DOUBLE_TAP) : 0 };
+}
+
+// Enter in a text field means OK (the form's own default would be Cancel, its first button).
+$("#ask").addEventListener("keydown", e => {
+  if (e.key !== "Enter" || e.target.tagName !== "INPUT" || e.isComposing) return;
+  e.preventDefault();
+  $("#ask").close("ok");
+});
 
 // Shows #ask with a message or text fields; resolves to the field values (OK) or null (Cancel, Esc).
 function ask({ message = "", fields = [], ok = "OK" }) {
@@ -671,7 +739,7 @@ $("#example").onclick = async () => {
   renderTray(); layoutBoard(); closeTray(); fit();
 };
 $("#addText").onclick = addNote;
-$("#openTray").onclick = openTray;
+$("#pieces").onclick = () => state.phone ? openTray() : setSide(!sideOpen());
 $("#closeTray").onclick = closeTray;
 $("#fit").onclick = fit;
 
@@ -691,10 +759,6 @@ const onFull = () => {
 };
 document.addEventListener("fullscreenchange", onFull);
 document.addEventListener("webkitfullscreenchange", onFull);
-$("#writeBtn").onclick = () => {
-  const el = state.selected, item = el && ITEMS.find(i => i.id === el.dataset.id);
-  if (item) item.kind === "note" ? editNote(el) : write(el, item);
-};
 
 // Mouse: drag the empty table to pan; the wheel zooms (a trackpad's two-finger scroll pans, pinch zooms).
 wrap.addEventListener("pointerdown", e => {
@@ -781,10 +845,12 @@ window.addEventListener("resize", () => {
   const was = state.phone;
   state.phone = matchMedia(PHONE).matches;
   if (!state.phone) closeTray();
+  markPieces();
   renderTray(); layoutBoard();
   if (state.phone !== was) fit();
 });
 state.phone = matchMedia(PHONE).matches;
+markPieces();
 renderViews(); renderTray(); layoutBoard(); placeBase(); layoutBoard();
 fit();
 </script>
