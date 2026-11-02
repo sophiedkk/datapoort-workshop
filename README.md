@@ -1,4 +1,6 @@
-# Datapoort openEHR building blocks workshop
+# openEHR building blocks workshop
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23886471.svg)](https://doi.org/10.5281/zenodo.23886471)
 
 A paper building-block openEHR template-modelling workshop: participants build the *Nursing
 Admission Assessment* template from printed archetype plates and building blocks, then author
