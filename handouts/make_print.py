@@ -19,10 +19,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from make_bricks import (A4, COLORS_FILE, DECOY_DIR, EXCLUDED, EXPORT_DIR, FONT_FAMILY, OUT_DIR, parse_terms,
-                         sheet_pages, text_width)
+from make_bricks import (A4, COLORS_FILE, DECOY_DIR, EXCLUDED, EXPORT_DIR, FONT_FAMILY, MARGIN, MM_PER_BRICK,
+                         OUT_DIR, H, W, parse_terms, sheet_pages, text_width)
 from make_assignment import answer_key_pages, assignment_pages
-from make_plates import (COMPOSITION, GROUPS, SECTION, WRITE_INK, baseplate_piece, baseplates_page, example,
+from make_plates import (COMPOSITION, GROUPS, PRELABELLED, SECTION, WRITE_INK, baseplate_piece, baseplates_page, example,
                          heading_piece, plate_write_ins, plates_page)
 from make_stickers import NAME_H, card_sticker, name_sticker
 from make_stickers import page_svg as sticker_page
@@ -62,11 +62,34 @@ def plate(aid):
     return (OUT_DIR / aid / "plate.svg").read_text(encoding="utf-8")
 
 
-def sheets(aid, names, colors, suffix="", with_plate=True):
+def sheets(aid, names, colors, suffix="", with_plate=True, footer=True):
     rm = aid.split("-")[2].split(".")[0].replace("_", " ").title()
     elements = re.search(r'data-elements="([^"]+)"', plate(aid))
     return sheet_pages([plate(aid)] * with_plate + bricks(aid), (names[aid], rm + suffix), colors[aid]["hex"],
-                       note=elements.group(1) if elements else "")
+                       footer=footer, note=elements.group(1) if elements else "")
+
+
+def two_per_page(aids, names, colors):
+    """The building blocks of two archetypes per A4 page, each in its own half with its own title."""
+    half = A4[1] / 2
+    block_h, gap = MM_PER_BRICK * H / W, 6           # as laid out by sheet_pages
+    halves = []
+    for aid in aids:
+        pages = sheets(aid, names, colors, with_plate=False, footer=False)
+        rows = -(-len(bricks(aid)) // 2)
+        if len(pages) != 1 or MARGIN + 14 + rows * block_h + (rows - 1) * gap > half - 2:
+            raise SystemExit(f"{aid}: too many building blocks for half a page (make_bricks.py --max-bricks 4)")
+        head, body = pages[0].split('fill="#fff"/>', 1)
+        halves.append((head + 'fill="#fff"/>', body.rsplit("</svg>", 1)[0]))
+    out = []
+    for i in range(0, len(halves), 2):
+        (head, top), *rest = halves[i:i + 2]
+        page = head + top
+        if rest:
+            page += (f'<line x1="0" y1="{half}" x2="{A4[0]}" y2="{half}" stroke="#666" stroke-width="0.3" '
+                     f'stroke-dasharray="1.5 1.5"/><g transform="translate(0 {half})">{rest[0][1]}</g>')
+        out.append(page + "</svg>")
+    return out
 
 
 def example_parts():
@@ -88,7 +111,7 @@ def example_parts():
                          f'fill="{WRITE_INK}">{esc(pc["ink"]["text"])}</text>')
             continue
         if pc["kind"] in pieces:
-            piece = pieces[pc["kind"]]
+            piece = heading_piece(pc["label"]) if pc.get("label") else pieces[pc["kind"]]
             svg = (f'<svg viewBox="0 0 {piece["w"]} {piece["h"]}">' + "".join(piece["parts"]) + "</svg>")
             writes, w, h = piece["write"], piece["w"], piece["h"]
         else:
@@ -241,12 +264,13 @@ def main():
     blank = (OUT_DIR / EXERCISE_3 / "blank.svg").read_text(encoding="utf-8")
     participant = [
         ("Assignment", "Exercises and the paper forms", assignment_pages(footer=False)),
-        ("Template structure", "5 write-on Ad hoc heading plates (SECTION); the baseplates are on the A0 sheet",
+        ("Template structure",
+         f"5 Ad hoc heading plates (SECTION), one labelled {PRELABELLED}; the baseplates are on the A0 sheet",
          [plates_page()]),
         ("Archetype plates", "All plates, template archetypes and decoys mixed: hand out first, for exercise 0",
          sheet_pages([plate(aid) for aid in table], "Archetype plates", None, footer=False, gap=4)),
-        ("Building blocks", "One sheet per archetype: hand out after exercise 0",
-         [pg for aid in table for pg in sheets(aid, names, colors, with_plate=False)]),
+        ("Building blocks", "Two archetypes per sheet: hand out after exercise 0",
+         two_per_page(table, names, colors)),
         ("Template override stickers", "Cardinality and rename stickers: yellow means changed in the template",
          [sticker_page()]),
     ]

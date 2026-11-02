@@ -14,7 +14,7 @@ uv run make_bricks.py --all --dry-run    # list the fields only
 
 ## How many building blocks per archetype
 
-To keep it manageable, each archetype gets at most 8 building blocks (`--max-bricks`, one A4 sheet):
+To keep it manageable, each archetype gets at most 4 building blocks (`--max-bricks`, half an A4 sheet):
 every field the COMPLETE template uses (`--template`) plus unused fields from the same
 archetype as decoys, so participants still have to constrain things out. Unfilled slots
 only count as used when the template fills them. Cloned fields (Medication order:
@@ -72,7 +72,7 @@ the templates use them, but not in the workshop: `make_bricks.py --all` skips th
 left out of the print pack (`EXCLUDED` in `make_bricks.py`).
 
 Where the workshop form differs from the COMPLETE template, `FORM_CHANGES` in `make_bricks.py`
-overrides it: the form has one *Directions (dose/frequency)* field, so Medication order keeps
+overrides it: the form has one *Directions* field, so Medication order keeps
 Overall directions description instead of the template's Dose and Frequency clones.
 
 COMPOSITION and SECTION archetypes are skipped (they're the baseplate and the heading plates, not building blocks).
@@ -97,8 +97,8 @@ the decoys and `--blank` first; it reads the building block SVGs from `out/`.
 
 - `out/participant_handouts.pdf`: the assignment (one per participant), then per group the
   template structure page, all archetype plates together (handed out first, for exercise 0),
-  one page of building blocks per archetype (handed out after exercise 0; archetype name at the
-  top and bottom of the page) and the override stickers.
+  the building blocks, two archetypes per page (handed out after exercise 0; each half has the
+  archetype name at the top) and the override stickers.
 - `out/facilitator_handouts.pdf`: a guide page (print counts, contents of both files, colour
   legend with the decoys marked), the answer key, the worked example (the answer built on the
   baseplate, from `example()` in `make_plates.py`) and the filled-in Inpatient admission details.

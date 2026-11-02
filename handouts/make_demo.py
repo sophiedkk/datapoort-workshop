@@ -18,8 +18,8 @@ import re
 from PIL import Image
 
 from make_bricks import OUT_DIR, font_file
-from make_plates import (BLOCK, COMPOSITION, PLATE, SECTION, HEADINGS, STUD_MM, baseplate_piece, ensure_colors,
-                         example, heading_piece, plate_write_ins)
+from make_plates import (BLOCK, COMPOSITION, PLATE, SECTION, HEADINGS, PRELABELLED, STUD_MM, baseplate_piece,
+                         ensure_colors, example, heading_piece, plate_write_ins)
 from make_print import CKM_PILE, EXCLUDED, EXERCISE_3, archetype_names, plate
 from make_stickers import CARD_H, CARD_W, CARDINALITY, NAME_H, NAME_W, RENAMES, card_sticker, name_sticker
 
@@ -74,8 +74,9 @@ def items():
             add(tab, names[aid], {"kind": "block", "aid": aid, "stem": stem, "w": BLOCK["w"], "svg": inline(svg),
                                   "face": face(BLOCK)})
 
-    for _ in range(HEADINGS):
-        add("Structure", "Ad hoc headings (SECTION)", strip(heading_piece(), aid=SECTION))
+    for i in range(HEADINGS):                 # the first one has its name printed, as on paper
+        label = PRELABELLED if i == 0 else None
+        add("Structure", "Ad hoc headings (SECTION)", strip(heading_piece(label or ""), aid=SECTION, label=label))
     for aid in table:
         add("Plates", "Archetype plates", plate_item(aid))
     for aid in table:
@@ -723,7 +724,8 @@ $("#example").onclick = async () => {
   EXAMPLE.forEach(ex => {
     const kind = ex.kind === "heading" ? "strip" : ex.kind;
     const same = i => ex.kind === "sticker" ? i.sticker === ex.sticker && (i.label || null) === ex.label
-                                            : i.aid === ex.aid && (!ex.stem || i.stem === ex.stem);
+                    : ex.kind === "heading" ? i.aid === ex.aid && (i.label || null) === (ex.label || null)
+                    : i.aid === ex.aid && (!ex.stem || i.stem === ex.stem);
     const item = ex.kind === "baseplate" ? ITEMS[0] : ITEMS.find(i => !used.has(i.id) && i.tab && i.kind === kind && same(i));
     if (!item) return;
     used.add(item.id);

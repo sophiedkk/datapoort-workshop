@@ -808,7 +808,7 @@ class TemplateUsage:
 
 
 # Where the workshop form differs from the COMPLETE template: per archetype, at-code -> number of copies
-# kept (0 = constrained out). The form has one 'Dose/frequency' field, so Overall directions description
+# kept (0 = constrained out). The form has one 'Directions' field, so Overall directions description
 # instead of the two Specific directions description clones (Dose, Frequency).
 FORM_CHANGES = {"openEHR-EHR-INSTRUCTION.medication_order.v3": {"at0173": 0, "at0009": 1}}
 
@@ -978,9 +978,9 @@ def main():
     ap.add_argument("--keep-extension", action="store_true")
     ap.add_argument("--stud-logo", action="store_true",
                     help="print 'openEHR' on the studs (default: plain knock-off studs)")
-    ap.add_argument("--max-bricks", type=int, default=8,
+    ap.add_argument("--max-bricks", type=int, default=4,
                     help="max bricks per archetype: every template field plus unused decoy fields "
-                         "(default 6: plate + bricks fit one A4 sheet; 0 = every field)")
+                         "(default 4: two archetypes fit one A4 sheet; 0 = every field)")
     ap.add_argument("--template", type=Path, default=TEMPLATE_FILE,
                     help="template (.t.json) that defines which fields are used")
     ap.add_argument("--blank", action="store_true",

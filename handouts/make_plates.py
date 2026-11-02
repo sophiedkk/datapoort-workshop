@@ -23,12 +23,14 @@ COMPOSITION = "openEHR-EHR-COMPOSITION.encounter.v1"
 SECTION = "openEHR-EHR-SECTION.adhoc.v1"
 PLATE_COLORS = {COMPOSITION: ("Bright Green", "#4B9F4A"), SECTION: ("Light Bluish Gray", "#A0A5A9")}
 HEADINGS = 5
+PRELABELLED = "Vital signs"           # printed on one of the heading plates, as an example
 INK = "#1B1B1B"
 
 UNIT = MM_PER_BRICK / W                 # mm per unit of the block and plate drawings
 STUD_MM = STUD * UNIT                   # 20.25 mm
 DEPTH = (DX * UNIT, DY * UNIT)          # top face, the same as on the blocks
 HEADING_STUDS, HEADING_H = 8, PLATE_FH * UNIT   # as high as an archetype plate
+HEADING_TEXT = 7.9                      # mm: a heading's name, written or printed
 GAP_STUDS = 1                           # between two parts of the form and at both ends: room for the paper edges
 BASE_STUDS, BASE_H, BASE_K = 6 * 8 + 7 * GAP_STUDS, 60, 2   # BASE_K: text size, relative to a heading
 A0 = (1189, 841)                        # landscape
@@ -56,23 +58,32 @@ def concept(aid):
     return parse_terms(path.read_text(encoding="utf-8-sig"), "en")["at0000"]
 
 
-# The baseplate's white space, right of the template name: (title, lines) per column.
+# The baseplate's white space, right of the template name: (title, lines) per column, at most four
+# lines each. A line starting with ** is printed bold.
 BASE_INFO = [
+    ("THE EXERCISES: DETAILED STEPS IN THE ASSIGNMENT", [
+        "**Exercise 0: Choose the archetypes (the plates)",
+        "Plates and grey headings only, keep the blocks aside.",
+        "**Exercise 1: Choose the elements (the building blocks)",
+        "Keep only the blocks the form needs, add yellow stickers."]),
     ("HOW TO BUILD", ["Everything stands on what it belongs to.",
                       "Higher up = deeper in the template.",
-                      "One free stud between two parts of the form."]),
+                      "One free stud between two parts of the form.",
+                      "Use a grey heading only for a group or a repeating list."]),
     ("ENCOUNTER: ONE CONTACT WITH THE PATIENT", ["Saved as one record (a composition), always with:",
                                                  "Who filled it in (composer)",
                                                  "When and where (start time, care setting)",
                                                  "Language and territory"]),
 ]
-BASE_NAME_W = 440                       # mm of the template name line on the baseplate
+BASE_NAME_W = 280                       # mm of the template name line on the baseplate
+BASE_INFO_W = 260                       # mm from one BASE_INFO column to the next
 
 
-def plate(x, y, studs, h, color, header, note, field_label, k=1, info=()):
+def plate(x, y, studs, h, color, header, note, field_label, k=1, info=(), printed=None):
     """A long building-block plate in mm, `studs` wide: top face with studs on the grid, front face
     with a write-on sticker. k scales the text (the baseplate is higher than a heading). info: columns
-    of (title, lines) right of the write-on line (BASE_INFO on the baseplate)."""
+    of (title, lines) right of the write-on line (BASE_INFO on the baseplate). printed: (name, size in mm)
+    printed on the write-on line instead of leaving it blank."""
     w = studs * STUD_MM
     dx, dy = DEPTH
     top, side, edge = shade(color, 1.25), shade(color, 0.72), shade(color, 0.55)
@@ -109,32 +120,39 @@ def plate(x, y, studs, h, color, header, note, field_label, k=1, info=()):
         f'<line x1="{sx + 3 * k}" y1="{sy + sh_ - 3 * k}" x2="{sx + (BASE_NAME_W if info else sw - 3 * k)}" '
         f'y2="{sy + sh_ - 3 * k}" stroke="#9A9A9A" stroke-width="0.3"/>',
     ]
+    if printed:
+        p.append(f'<text x="{x + 5.2 * k}" y="{y + h - 6.8 * k}" font-size="{printed[1]}" font-weight="700" '
+                 f'fill="{INK}">{esc(printed[0])}</text>')
     for i, (title, lines) in enumerate(info):
-        cx = sx + BASE_NAME_W + 30 + i * 330
+        cx = sx + BASE_NAME_W + 30 + i * BASE_INFO_W
         p.append(f'<text x="{cx}" y="{sy + 9.6 * k}" font-size="{2.1 * k}" font-weight="800" fill="#555">'
                  f'{esc(title)}</text>')
         for j, line in enumerate(lines):
-            p.append(f'<text x="{cx}" y="{sy + 9.6 * k + 7.4 + j * 7}" font-size="6.2" font-weight="600" '
-                     f'fill="{INK}">{esc(line)}</text>')
+            bold = line.startswith("**")
+            p.append(f'<text x="{cx}" y="{sy + 9.6 * k + 7.4 + j * 7}" font-size="6.2" '
+                     f'font-weight="{800 if bold else 600}" fill="{INK}">{esc(line.removeprefix("**"))}</text>')
     return p
 
 
-def strip_piece(aid, studs, h, note, label, k=1, text_mm=7.9, info=()):
+def strip_piece(aid, studs, h, note, label, k=1, text_mm=HEADING_TEXT, info=(), printed=""):
     """A heading or the baseplate as a piece of its own (front view, mm): its SVG parts, size, front
     face and where its name is written (fractions of the piece, like the demo's write-ins)."""
     kind = "Composition" if aid == COMPOSITION else "Section"
     top = 11                                    # room for the top face and the studs
     vw, vh = studs * STUD_MM + 7.5, h + top + 1.5
-    parts = plate(1, top, studs, h, ensure_colors()[aid]["hex"], (concept(aid)[0], kind), note, label, k, info)
+    parts = plate(1, top, studs, h, ensure_colors()[aid]["hex"], (concept(aid)[0], kind), note, label, k, info,
+                  (printed, text_mm) if printed else None)
     write = {"key": "name", "x": (1 + 5.2 * k) / vw, "y": (top + h - 6.8 * k) / vh, "size": text_mm / vw,
              "bg": True, "prompt": label.capitalize()}
-    return {"parts": parts, "w": vw, "h": vh, "face": (1, top, top + h, studs * STUD_MM), "write": [write]}
+    return {"parts": parts, "w": vw, "h": vh, "face": (1, top, top + h, studs * STUD_MM),
+            "write": [] if printed else [write]}
 
 
-def heading_piece():
+def heading_piece(printed=""):
+    """A write-on heading, or with its name already printed on it."""
     _, sect_desc = concept(SECTION)
     return strip_piece(SECTION, HEADING_STUDS, HEADING_H, sect_desc.split(" which")[0] + ": rename it",
-                       "SECTION NAME")
+                       "SECTION NAME", printed=printed)
 
 
 def baseplate_piece():
@@ -153,6 +171,15 @@ def plate_write_ins():
 
 
 # --------------------------------------------------------------------------- worked example
+
+def block_stem(aid, name):
+    """File name of a building block, e.g. "manifestation" -> "03_manifestation": the numbers depend on
+    which blocks make_bricks.py selected."""
+    found = sorted((OUT_DIR / aid).glob(f"[0-9][0-9]_{name}.svg"))
+    if not found:
+        raise SystemExit(f"No building block {name!r} for {aid}: run make_bricks.py first")
+    return found[0].stem
+
 
 O = "openEHR-EHR-OBSERVATION."
 EXAMPLE_NAME = "Nursing Admission Assessment"
@@ -181,43 +208,47 @@ def example():
     def arch(aid, stud, bottom, blocks, name="", card="0..1"):
         """An archetype plate with its blocks side by side; returns the top of the first block."""
         top = put("plate", PLATE, stud, bottom, aid=aid, ink={"card": card}, rename=name)
-        return [put("block", BLOCK, stud + 4 * i, top, aid=aid, stem=b) for i, b in enumerate(blocks)][0]
+        return [put("block", BLOCK, stud + 4 * i, top, aid=aid, stem=block_stem(aid, b))
+                for i, b in enumerate(blocks)][0]
 
     reaction = "openEHR-EHR-CLUSTER.adverse_reaction_event.v1"
 
     def section(stud, name):
+        if name == PRELABELLED:
+            return put("heading", heading, stud, floor, aid=SECTION, ink={}, label=name)
         return put("heading", heading, stud, floor, aid=SECTION, ink={"name": name})
 
     col = [GAP_STUDS + (8 + GAP_STUDS) * i for i in range(6)]
-    arch("openEHR-EHR-EVALUATION.problem_diagnosis.v1", col[0], floor, ["01_problem_diagnosis_name"],
+    arch("openEHR-EHR-EVALUATION.problem_diagnosis.v1", col[0], floor, ["problem_diagnosis_name"],
          "Main Diagnosis")
-    arch(O + "story.v1", col[1], floor, ["01_story"], "Patient History")
+    arch(O + "story.v1", col[1], floor, ["story"], "Patient History")
     # the slot block goes on the left: the CLUSTER plate on it overhangs 4 studs, above the gap and Patient History
     slot = arch("openEHR-EHR-EVALUATION.adverse_reaction_risk.v2", col[2], section(col[2], "Allergies"),
-                ["08_reaction_event_summary", "01_substance"], card="0..*")
+                ["reaction_event_summary", "substance"], card="0..*")
     top = put("plate", PLATE, col[2] - 4, slot, aid=reaction, ink={"card": "0..1"})
-    put("block", BLOCK, col[2], top, aid=reaction, stem="03_manifestation")
+    put("block", BLOCK, col[2], top, aid=reaction, stem=block_stem(reaction, "manifestation"))
     arch("openEHR-EHR-INSTRUCTION.medication_order.v3", col[3], section(col[3], "Medications"),
-         ["01_medication_item", "05_overall_directions_description"], card="0..*")
+         ["medication_item", "overall_directions_description"], card="0..*")
     # more than one archetype under a heading: each stands on the blocks of the one below
-    top = arch(O + "height.v2", col[4], section(col[4], "Vital signs"), ["01_height_length"])
-    top = arch(O + "body_weight.v2", col[4], top, ["01_weight"])
-    arch(O + "blood_pressure.v2", col[4], top, ["01_systolic", "02_diastolic"])   # only the capitals differ: no rename
-    arch(O + "clinical_frailty_scale.v1", col[5], floor, ["01_assessment"])
+    top = arch(O + "height.v2", col[4], section(col[4], "Vital signs"), ["height_length"])
+    top = arch(O + "body_weight.v2", col[4], top, ["weight"])
+    arch(O + "blood_pressure.v2", col[4], top, ["systolic", "diastolic"])   # only the capitals differ: no rename
+    arch(O + "clinical_frailty_scale.v1", col[5], floor, ["assessment"])
     return out + stickers(out)
 
 
-# Yellow stickers of the answer key, per building block: (new name, stricter cardinality).
+# Yellow stickers of the answer key, per building block (its file name without the number):
+# (new name, stricter cardinality).
 # Allergy, Reaction and Directions are printed on the sticker sheet, the other names are written on blanks.
 EXAMPLE_STICKERS = {
-    "01_story": ("Patient's story", None),
-    "01_substance": ("Allergy", None),
-    "03_manifestation": ("Reaction", "1..1 required"),
-    "01_medication_item": ("Name", None),
-    "05_overall_directions_description": ("Directions", None),
-    "01_height_length": ("Height", None),
-    "01_systolic": (None, "1..1 required"),
-    "02_diastolic": (None, "1..1 required"),
+    "story": ("Patient's story", None),
+    "substance": ("Allergy", None),
+    "manifestation": ("Reaction", "1..1 required"),
+    "medication_item": ("Name", None),
+    "overall_directions_description": ("Directions", None),
+    "height_length": ("Height", None),
+    "systolic": (None, "1..1 required"),
+    "diastolic": (None, "1..1 required"),
 }
 
 
@@ -234,9 +265,9 @@ def stickers(placed):
                         "x": pc["x"] + (FX + 30 + 40) * UNIT - 3,
                         "y": pc["y"] + (PLATE_FY + 26 + PLATE_HB / 2) * UNIT - NAME_H / 2,
                         "ink": {} if label else {"text": pc["rename"]}})
-        if pc["kind"] != "block" or pc["stem"] not in EXAMPLE_STICKERS:
+        if pc["kind"] != "block" or pc["stem"][3:] not in EXAMPLE_STICKERS:
             continue
-        name, card = EXAMPLE_STICKERS[pc["stem"]]
+        name, card = EXAMPLE_STICKERS[pc["stem"][3:]]
         svg = (OUT_DIR / pc["aid"] / f'{pc["stem"]}.svg').read_text(encoding="utf-8")
         if name:                                # just under the header, over the field name
             label = name if name in printed else None
@@ -266,9 +297,10 @@ def plates_page():
          '<rect width="100%" height="100%" fill="#fff"/>']
     y = 36
     p.append(sheet_header("Template structure: Ad hoc headings", colors[SECTION]["hex"], x - 2))
-    for _ in range(HEADINGS):
+    for i in range(HEADINGS):
         p += plate(x, y, HEADING_STUDS, HEADING_H, colors[SECTION]["hex"], (sect_name, "Section"),
-                   sect_desc.split(" which")[0] + ": rename it", "SECTION NAME")
+                   sect_desc.split(" which")[0] + ": rename it", "SECTION NAME",
+                   printed=(PRELABELLED, HEADING_TEXT) if i == 0 else None)
         p.append(f'<rect x="{x - 2}" y="{y - 12}" width="{w + 9.5}" height="{HEADING_H + 14}" fill="none" '
                  f'stroke="#666" stroke-width="0.3" stroke-dasharray="1.5 1.5"/>')
         y += HEADING_H + 22

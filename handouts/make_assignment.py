@@ -58,7 +58,8 @@ CONTENT = [
     ("bullets", [
         "**Green Encounter baseplate = the template** (COMPOSITION). Lay it along the edge of your table: you "
         "build the template up from it, seen from the front, like a wall of building blocks.",
-        "**Grey plates = Ad hoc heading** (SECTION): a generic heading; write its name on the plate.",
+        "**Grey plates = Ad hoc heading** (SECTION): a generic heading; write its name on the plate. One is "
+        "already labelled **Vital signs**, as an example.",
         "**Coloured plates = archetypes.** One per archetype, in its own colour, two building blocks wide. "
         "Write the cardinality the archetype gets in your template on the plate; a new name goes on a yellow "
         "sticker over the archetype's name.",
@@ -82,14 +83,15 @@ CONTENT = [
         "order as on the form, side by side with one free stud between them.",
         "Not every part of the form needs a grey heading: an archetype's name already works as a heading "
         "(and you can rename it to match the form). Use a heading (**SECTION**) only to group several "
-        "archetypes, or to put one heading above a list that repeats. Write the names on the grey plates.",
-        "Several archetypes under one heading? Stack them on the heading, one on top of the other.",
+        "archetypes, or for a list that repeats. Write the names on the grey plates.",
+        "Several archetypes in one group? Stack them on the heading, one on top of the other.",
         "Find an archetype plate for each part of the form. Not every plate belongs in your template, and some "
         "parts need more than one.",
         "Read the purpose and the entry type (OBSERVATION, EVALUATION, INSTRUCTION, CLUSTER) on each plate: "
         "does it fit what the form records?",
         "Can the form hold more than one of something? Fill in the cardinality on that archetype's plate.",
-        "Found a dashed CLUSTER plate you need? Put it on top of the archetype it slots into.",
+        "Need a CLUSTER plate? Keep it next to the archetype it plugs into (its plate says which): it goes "
+        "on one of that archetype's building blocks in exercise 1.",
         "Is there something on the form that none of the plates covers? Go to the **CKM desk** (your "
         "facilitator) and describe what you're looking for, as precisely as you can.",
         "Medications: in openEHR, the list of medication a patient uses is made of medication orders, even "
@@ -127,7 +129,7 @@ CONTENT = [
 
     ("h3", "1.4 Medication directions", None),
     ("p", "In the **medication** list on the form, the 'Directions' column holds the prescriber's directions "
-          "for each medication: how much, and how often. There is no element called Dose or Frequency."),
+          "for each medication, written as one sentence, like the examples on the form."),
     ("bullets", [
         "Look at the **Medication order** elements about directions and read their descriptions. Which one "
         "covers the whole of the directions?",
@@ -149,14 +151,13 @@ CONTENT = [
         "and fill in the cardinality.",
         "Which data type lets a nurse pick from a list, or write something under 'Other'?",
         "Can more than one 'Transported with' apply? What does that mean for the cardinality?",
-        "Where would your new archetype go in the template: under a heading, or straight on the Encounter? "
+        "Where would your new archetype go in the template: on a heading, or straight on the Encounter? "
         "It doesn't need to go on the baseplate.",
     ]),
     ("space", 4),
     ("image", "additional-info.png", 112, "Paper form: Additional information on admission"),
 
     ("pagebreak",),
-    ("h2", "The paper form: Nursing Admission Assessment"),
     ("image", "nursing-admission.png", 178, None),
 ]
 
@@ -398,7 +399,7 @@ ANSWERS = [
     ("table", [
         ("Structure", "Main diagnosis, Patient history and Frailty straight on the Encounter baseplate, without a "
                       "heading: the (renamed) archetype is the heading. Ad hoc headings: **Vital signs** (three "
-                      "archetypes stacked on it), **Allergies** and **Medications** (one heading above a repeating "
+                      "archetypes stacked on it), **Allergies** and **Medications** (a heading for a repeating "
                       "list, 0..*). Two of the five heading plates stay unused. The worked example shows it built."),
         ("Main diagnosis", "**Problem/Diagnosis** (EVALUATION)."),
         ("Patient history", "**Story/History** (OBSERVATION)."),
