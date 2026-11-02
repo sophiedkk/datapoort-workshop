@@ -1,0 +1,36 @@
+{
+  "title": "openEHR building blocks workshop",
+  "upload_type": "lesson",
+  "description": "<p>A paper building-block workshop on openEHR template modelling. Participants build the <em>Nursing Admission Assessment</em> template from printed archetype plates and building blocks, then author a new archetype (<em>Inpatient admission details</em>) with write-on blocks. No computers or internet are needed on the day.</p><p>Contains print-ready participant and facilitator handouts, the CKM desk, A0 baseplates, an offline drag-and-drop demo page, the archetypes and templates used, and the generator that builds all materials. Online demo: <a href=\"https://sophiedkk.github.io/datapoort-workshop/\">sophiedkk.github.io/datapoort-workshop</a>.</p><p>Adapted from the openEHR workshop by Ian McNicoll (freshEHR), with the additions the Hanze made for the EHRCON26 version.</p><p>Licence: CC BY-SA 4.0. Third-party content keeps its own terms: the archetypes are from the openEHR Clinical Knowledge Manager (openEHR Foundation and others, CC BY-SA 4.0); the content of the Clinical Frailty Scale is copyright Geriatric Medicine Research, Dalhousie University, and is <strong>not</strong> covered by this licence; SNOMED CT codes are copyright SNOMED International; the Lexend font is under the SIL Open Font License.</p>",
+  "creators": [
+    {
+      "name": "de Klerk, Sophie",
+      "affiliation": "Hanze University of Applied Sciences",
+      "orcid": "0000-0003-2745-1963"
+    }
+  ],
+  "keywords": [
+    "openEHR",
+    "archetypes",
+    "templates",
+    "clinical modelling",
+    "health informatics",
+    "interoperability",
+    "workshop",
+    "teaching material"
+  ],
+  "license": "cc-by-sa-4.0",
+  "language": "eng",
+  "related_identifiers": [
+    {
+      "identifier": "https://freshehrteam.github.io/openehr-workshop/",
+      "relation": "isDerivedFrom",
+      "resource_type": "lesson"
+    },
+    {
+      "identifier": "https://github.com/sophiedkk/datapoort-workshop",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    }
+  ]
+}

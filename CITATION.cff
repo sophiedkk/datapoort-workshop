@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use or adapt these materials, please cite them as below and also credit Ian McNicoll's openEHR workshop."
+title: "openEHR building blocks workshop"
+abstract: >-
+  A paper building-block workshop on openEHR template modelling. Participants
+  build the Nursing Admission Assessment template from printed archetype plates
+  and building blocks, then author a new archetype (Inpatient admission
+  details) with write-on blocks. No computers or internet are needed on the day.
+authors:
+  - family-names: "de Klerk"
+    given-names: "Sophie"
+    affiliation: "Hanze University of Applied Sciences"
+    orcid: "https://orcid.org/0000-0003-2745-1963"
+license: CC-BY-SA-4.0
+repository-code: "https://github.com/sophiedkk/datapoort-workshop"
+url: "https://sophiedkk.github.io/datapoort-workshop/"
+keywords:
+  - openEHR
+  - archetypes
+  - templates
+  - clinical modelling
+  - health informatics
+  - workshop
+references:
+  - type: generic
+    title: "openEHR workshop"
+    authors:
+      - family-names: "McNicoll"
+        given-names: "Ian"
+        affiliation: "freshEHR"
+    url: "https://freshehrteam.github.io/openehr-workshop/"
