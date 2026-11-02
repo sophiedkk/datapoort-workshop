@@ -44,6 +44,16 @@ Commit the files in `handouts/out/` afterwards; pushing `demo.html` to `main` up
 demo. See [handouts/README.md](handouts/README.md) for building without a container, the
 generator scripts, the demo page and changing a paper form.
 
+## Use of generative AI
+
+The generator scripts, the demo page and parts of the handout text were written with the help of
+Claude Code, a generative AI assistant by Anthropic, using the Claude Opus 5.5 model. The workshop
+concept was conceived by William Mensen. The design of the materials and the choice of archetypes
+are my own, based on Ian McNicoll's openEHR workshop as adapted for EHRCON26; the archetypes
+themselves come from the openEHR Clinical Knowledge Manager. I reviewed
+all materials, tried them out in a test run with participants, and am responsible for their
+content.
+
 ## Credits and licence
 
 Adapted from the [openEHR workshop](https://freshehrteam.github.io/openehr-workshop/) by Ian
